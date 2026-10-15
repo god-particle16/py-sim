@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Work and Energy Skate Park Simulation</title>
+<meta name="description" content="Free energy simulation. A skater rolls on a track while bar charts show kinetic, potential and thermal energy. Explore conservation of energy and friction.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="energy">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Work and Energy (Skate Park)</h1>
+  <p class="lead">A skater rolls back and forth on a curved track. Watch energy change form between kinetic, potential and thermal. Drag the skater to a new starting height.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Energy skate park simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="track">Track shape</label><select id="track"><option value="bowl">Bowl</option><option value="halfpipe">Half-pipe with flat</option><option value="hills">Hills</option></select></div>
+      <div class="ctl"><label for="m">Skater mass <output id="m-o"></output></label><input type="range" id="m" min="20" max="100" step="5" value="50" data-unit="kg"></div>
+      <div class="ctl"><label for="mu">Friction <output id="mu-o"></output></label><input type="range" id="mu" min="0" max="0.3" step="0.01" value="0" data-dec="2"></div>
+      <div class="ctl"><label for="grav">World</label>
+        <select id="grav"><option value="9.81">Earth (9.81 m/s&sup2;)</option><option value="1.62">Moon (1.62 m/s&sup2;)</option><option value="24.79">Jupiter (24.79 m/s&sup2;)</option></select></div>
+      <div class="btns"><button class="btn" id="go">Pause</button><button class="btn alt" id="reset">Reset</button></div>
+      <div class="readouts">
+        <span>Height</span><span id="r-h">-</span>
+        <span>Speed</span><span id="r-v">-</span>
+        <span>Kinetic energy</span><span id="r-k">-</span>
+        <span>Potential energy</span><span id="r-p">-</span>
+        <span>Thermal energy</span><span id="r-th">-</span>
+        <span>Total energy</span><span id="r-e">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>Energy is never created or destroyed, only moved from one form to another. As the skater climbs, kinetic energy (energy of motion) turns into gravitational potential energy (stored energy due to height). As the skater drops, the reverse happens. With no friction the total of the two stays exactly constant, so the skater always returns to the same height. With friction, the track does negative <strong>work</strong> on the skater, removing kinetic energy and turning it into thermal energy, so each swing is a little lower.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">Kinetic energy: K = &frac12; m v&sup2;<br>Gravitational potential energy: U = m g h<br>Conservation of energy: K + U + E<sub>thermal</sub> = constant<br>Work: W = F d cos&theta;<br>Work-energy theorem: W<sub>net</sub> = &Delta;K<br>Speed from height drop: v = &radic;(2 g &Delta;h)</div>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>With zero friction, check that total energy stays constant. Where is the kinetic bar largest?</li>
+        <li>Change the mass. Does the skater's speed at the bottom change? Does the energy change?</li>
+        <li>Move to the Moon. How do the energy and speed change for the same starting height?</li>
+        <li>Turn on friction and watch the thermal bar grow. What happens to the skater's peak height?</li>
+        <li>Use the hills track and find a start height from which the skater cannot clear the second hill.</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Saying energy is "lost" to friction. It is transferred to thermal energy, so the total is unchanged.</li>
+      <li>Thinking a heavier skater must reach a higher speed. In free sliding, mass cancels out of the speed.</li>
+      <li>Forgetting that potential energy depends on the chosen zero level. Only differences matter.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A 50 kg skater starts at rest 4 m above the bottom (no friction, Earth). What is the speed at the bottom?</summary><p>v = &radic;(2 &times; 9.81 &times; 4) &asymp; 8.9 m/s.</p></details>
+    <details class="q"><summary>2. What is the skater's potential energy there at the start?</summary><p>U = m g h = 50 &times; 9.81 &times; 4 &asymp; 1962 J.</p></details>
+    <details class="q"><summary>3. With friction, where does the skater's energy end up?</summary><p>It becomes thermal energy in the wheels and track, so the skater reaches lower heights over time.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.6), ctx = S.ctx;
+  var XW = 16;                       /* track is 16 m wide */
+  var s = 3, v = 0, therm = 0, running = true, dragging = false, E0 = 0, vis = false;
+  function G(){ return parseFloat(PL.$("grav").value); }
+  function M(){ return PL.val("m"); }
+  function h(x){
+    var k = PL.$("track").value;
+    if (k === "bowl") return 0.055*(x-8)*(x-8);
+    if (k === "halfpipe"){ var d = Math.abs(x-8); return d < 3 ? 0 : 0.5*(d-3)*(d-3)*0.9; }
+    return 3.2+1.6*Math.cos(x*0.8-0.3)+0.6*Math.cos(x*1.7);
+  }
+  function slope(x){ return (h(x+0.001)-h(x-0.001))/0.002; }
+  function startX(){ return PL.$("track").value === "hills" ? 2.2 : 2.5; }
+  function reset(){ s = startX(); v = 0; therm = 0; fixE(); }
+  function fixE(){ E0 = M()*G()*h(s)+0.5*M()*v*v+therm; }
+  function step(dt){
+    var m = M(), g = G(), sl = slope(s), c = 1/Math.sqrt(1+sl*sl), sn = sl*c;
+    /* x-motion along track: acceleration along x */
+    var a = -g*sn*c;
+    var mu = PL.val("mu");
+    var vel = v;                    /* horizontal speed */
+    a -= (vel === 0 ? 0 : Math.sign(vel))*mu*g*c*c;
+    var vn = vel + a*dt;
+    if (mu > 0 && vel !== 0 && Math.sign(vn) !== Math.sign(vel)){ vn = 0; }
+    var x1 = s, ke0 = 0.5*m*vel*vel*(1+sl*sl);
+    s += (vel+vn)/2*dt; v = vn;
+    if (s < 0.2){ s = 0.2; v = Math.abs(v)*0.0; }
+    if (s > XW-0.2){ s = XW-0.2; v = 0; }
+    if (mu === 0 && v !== 0){
+      /* frictionless: remove numerical drift so total energy is exactly conserved */
+      var slN = slope(s), Kt = E0 - m*g*h(s);
+      if (Kt > 0) v = Math.sign(v)*Math.sqrt(2*Kt/(m*(1+slN*slN)));
+    }
+    if (mu > 0){
+      var Edrop = m*g*(h(x1)-h(s)), ke1 = 0.5*m*v*v*(1+slope(s)*slope(s));
+      var lost = ke0 + Edrop - ke1; if (lost > 0) therm += lost;
+    }
+  }
+  function kin(){ var sl = slope(s); return 0.5*M()*v*v*(1+sl*sl); }
+  function draw(){
+    ctx.clearRect(0,0,S.w,S.h);
+    var sky = ctx.createLinearGradient(0,0,0,S.h); sky.addColorStop(0,"#13223b"); sky.addColorStop(1,"#1b3050"); ctx.fillStyle = sky; ctx.fillRect(0,0,S.w,S.h);
+    var base = S.h-18, sx = (S.w-40)/XW, sy = sx*1.0, ox = 20;
+    function X(x){ return ox+x*sx; } function Y(y){ return base-y*sy-0; }
+    // track
+    ctx.fillStyle = "#34486b"; ctx.beginPath(); ctx.moveTo(X(0),base);
+    for (var i = 0; i <= 160; i++){ var x = XW*i/160; ctx.lineTo(X(x), Y(h(x))); }
+    ctx.lineTo(X(XW),base); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "#9db0d0"; ctx.lineWidth = 3; ctx.beginPath();
+    for (var j = 0; j <= 160; j++){ var xx = XW*j/160; if (j) ctx.lineTo(X(xx),Y(h(xx))); else ctx.moveTo(X(xx),Y(h(xx))); } ctx.stroke();
+    // skater
+    var px = X(s), py = Y(h(s)), ang = Math.atan(slope(s));
+    ctx.save(); ctx.translate(px,py); ctx.rotate(-ang);
+    ctx.fillStyle = "#f0a202"; ctx.fillRect(-14,-8,28,5); ctx.fillStyle = "#222"; ctx.beginPath(); ctx.arc(-9,-2,3.5,0,7); ctx.arc(9,-2,3.5,0,7); ctx.fill();
+    ctx.fillStyle = "#ffd166"; ctx.beginPath(); ctx.arc(0,-26,6+M()/40,0,7); ctx.fill(); ctx.fillRect(-3,-22,6,14);
+    ctx.restore();
+    // energy bars
+    var m = M(), g = G(), K = kin(), U = m*g*h(s), tot = Math.max(E0, K+U+therm, 1), bx = S.w-140, by = 16, bw = 120, bh = 12;
+    [["Kinetic",K,"#2f9cf0"],["Potential",U,"#f0a202"],["Thermal",therm,"#d1495b"],["Total",K+U+therm,"#14a39b"]].forEach(function(r,i){
+      var yy = by+i*(bh+10); ctx.fillStyle = "#cfe3ff"; ctx.font = "11px sans-serif"; ctx.textAlign = "right"; ctx.fillText(r[0], bx-6, yy+bh-2);
+      ctx.fillStyle = "rgba(255,255,255,.1)"; ctx.fillRect(bx,yy,bw,bh); ctx.fillStyle = r[2]; ctx.fillRect(bx,yy,Math.max(0,Math.min(bw,bw*r[1]/tot)),bh);
+    });
+    // reference line at start energy
+    PL.set("r-h", h(s).toFixed(2)+" m"); PL.set("r-v", (Math.abs(v)*Math.sqrt(1+slope(s)*slope(s))).toFixed(2)+" m/s");
+    PL.set("r-k", K.toFixed(0)+" J"); PL.set("r-p", U.toFixed(0)+" J"); PL.set("r-th", therm.toFixed(0)+" J"); PL.set("r-e", (K+U+therm).toFixed(0)+" J");
+  }
+  var cv = S.c;
+  cv.addEventListener("pointerdown", function(e){
+    var p = S.pos(e), sx = (S.w-40)/XW, x = (p.x-20)/sx;
+    if (Math.abs(x-s) < 1.2){ dragging = true; cv.setPointerCapture(e.pointerId); }
+  });
+  cv.addEventListener("pointermove", function(e){
+    if (!dragging) return; var p = S.pos(e), sx = (S.w-40)/XW; s = Math.max(0.3, Math.min(XW-0.3, (p.x-20)/sx)); v = 0; therm = 0; fixE();
+  });
+  cv.addEventListener("pointerup", function(){ dragging = false; });
+  PL.$("go").onclick = function(){ running = !running; this.textContent = running ? "Pause" : "Resume"; };
+  PL.$("reset").onclick = reset;
+  ["track","m","grav"].forEach(function(id){ PL.$(id).addEventListener("change", reset); });
+  reset();
+  PL.loop(function(dt){
+    if (running && !dragging){ var n = Math.ceil(dt/0.002), d = dt/n; for (var i = 0; i < n; i++) step(d); }
+    draw();
+  });
+})();
+</script>
+</body>
+</html>

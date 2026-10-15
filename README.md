@@ -1,6 +1,6 @@
 # PhysLab - free interactive physics simulations
 
-A static website (plain HTML, CSS and JavaScript, no build step) with 10 original simulations, a lesson for each one, and Google AdSense support.
+A static website (plain HTML, CSS and JavaScript, no build step) with 14 original simulations, a lesson for each one, and Google AdSense support.
 
 ## Run it on your computer
 Open `index.html` in a browser, or run `python3 -m http.server 8000` in this folder and visit http://localhost:8000.
@@ -43,4 +43,4 @@ sims/*.html         one page per simulation (simulation + lesson)
 ```
 
 ## Ideas for the next batches of simulations
-Kinematics graphs, friction and forces, work and energy, simple machines, buoyancy, gas laws, heat transfer, standing waves, sound, lenses and mirrors, magnetic fields, electromagnetic induction, RC circuits, photoelectric effect, radioactive decay, Bohr atom.
+Friction and forces, simple machines, heat transfer, standing waves, sound, lenses and mirrors, magnetic fields, electromagnetic induction, RC circuits, photoelectric effect, radioactive decay, Bohr atom.

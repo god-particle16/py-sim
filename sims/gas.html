@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gas Laws Simulation (Pressure, Volume, Temperature)</title>
+<meta name="description" content="Free gas laws simulation. Watch particles in a container, change temperature, volume and number of particles, and verify Boyle's law, Charles's law and the ideal gas law.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="gas">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Gas Laws</h1>
+  <p class="lead">Gas particles bounce around inside a container with a movable wall. Change the temperature, volume and amount of gas and see how the pressure responds.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Gas laws simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="n">Number of particles <output id="n-o"></output></label><input type="range" id="n" min="5" max="150" step="5" value="50"></div>
+      <div class="ctl"><label for="T">Temperature <output id="T-o"></output></label><input type="range" id="T" min="100" max="900" step="10" value="300" data-unit="K"></div>
+      <div class="ctl"><label for="Vw">Container width (volume) <output id="Vw-o"></output></label><input type="range" id="Vw" min="4" max="16" step="0.1" value="10" data-unit="nm" data-dec="1"></div>
+      <div class="ctl"><label for="hold">Hold constant</label><select id="hold"><option value="none">Nothing (you set V and T)</option><option value="P">Pressure (wall floats freely)</option></select></div>
+      <div class="btns"><button class="btn alt" id="reset">Reset</button></div>
+      <div class="readouts">
+        <span>Pressure (measured)</span><span id="r-P">-</span>
+        <span>Pressure (theory)</span><span id="r-Pt">-</span>
+        <span>Volume</span><span id="r-V">-</span>
+        <span>Average speed</span><span id="r-v">-</span>
+        <span>P &times; V</span><span id="r-PV">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>A gas is a huge number of tiny particles moving in random directions and bouncing off the walls. The <strong>pressure</strong> you measure is the average force per unit area of all those collisions. Raise the temperature and the particles move faster, so they hit the walls harder and more often: pressure goes up. Squeeze the container and the same particles hit a smaller wall area more frequently: pressure goes up. Add more particles and there are simply more collisions.</p>
+    <p>For a fixed amount of gas these relationships are summed up in three named laws, and all three are special cases of the <strong>ideal gas law</strong>.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">Ideal gas law: P V = n R T = N k<sub>B</sub> T<br>Boyle's law (T, n constant): P V = constant<br>Charles's law (P, n constant): V / T = constant<br>Gay-Lussac's law (V, n constant): P / T = constant<br>Average kinetic energy per particle: &frac32; k<sub>B</sub> T</div>
+    <p>Temperature must always be in kelvin. The simulation is a 2D version of the real thing, so its pressure is a force per unit length, shown in arbitrary but consistent units.</p>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>Hold temperature constant. Halve the volume. Does the pressure double (Boyle's law)?</li>
+        <li>Hold volume constant. Double the temperature. What happens to the pressure and the average speed?</li>
+        <li>Hold pressure constant and raise the temperature. What does the wall do?</li>
+        <li>Double the number of particles at fixed T and V. What happens to the pressure?</li>
+        <li>Check the P &times; V readout against the number of particles times the temperature.</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Using Celsius in gas-law calculations. Always convert to kelvin.</li>
+      <li>Thinking pressure comes from particles pushing each other. It comes from collisions with the container walls.</li>
+      <li>Believing all particles move at the same speed. They have a spread of speeds; only the average depends on T.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A gas at 2 atm is compressed to half its volume at constant temperature. What is the new pressure?</summary><p>By Boyle's law, P<sub>2</sub> = 2 &times; 2 = 4 atm.</p></details>
+    <details class="q"><summary>2. A gas at 300 K is heated to 600 K at constant volume. What happens to the pressure?</summary><p>It doubles, because P is proportional to T at constant V.</p></details>
+    <details class="q"><summary>3. Why does a sealed can of air explode if heated strongly?</summary><p>The volume is fixed, so rising temperature raises the pressure until the can cannot withstand it.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.9), ctx = S.ctx;
+  var H = 8;                                  /* container height in nm */
+  var P = [], W = 10, wallV = 0, pAcc = 0, pAvg = 0, pTimer = 0, lastHold = "none", Pset = null;
+  var KB = 1, SPD = 0.0075;                   /* speed scale: v = SPD*sqrt(T) nm per unit */
+  function Tk(){ return PL.val("T"); }
+  function spawn(n){ while (P.length < n) P.push({ x:Math.random()*W, y:Math.random()*H, a:Math.random()*6.283, s:0.6+Math.random()*0.8 }); if (P.length > n) P.length = n; }
+  function reset(){ P = []; W = PL.val("Vw"); spawn(PL.val("n")); pAvg = 0; Pset = null; }
+  function vel(p){ return SPD*Math.sqrt(Tk())*p.s*1.6; }
+  function step(dt){
+    var hold = PL.$("hold").value;
+    if (hold !== lastHold){ lastHold = hold; Pset = null; }
+    var sp = 30;
+    for (var i = 0; i < P.length; i++){
+      var p = P[i], v = vel(p)*sp;
+      p.x += Math.cos(p.a)*v*dt; p.y += Math.sin(p.a)*v*dt;
+      if (p.y < 0){ p.y = -p.y; p.a = -p.a; pAcc += 2*v*Math.abs(Math.sin(p.a)); }
+      if (p.y > H){ p.y = 2*H-p.y; p.a = -p.a; pAcc += 2*v*Math.abs(Math.sin(p.a)); }
+      if (p.x < 0){ p.x = -p.x; p.a = Math.PI-p.a; pAcc += 2*v*Math.abs(Math.cos(p.a)); }
+      if (p.x > W){ p.x = 2*W-p.x; p.a = Math.PI-p.a; pAcc += 2*v*Math.abs(Math.cos(p.a)); }
+    }
+    pTimer += dt;
+    if (pTimer > 0.5){ var inst = pAcc/pTimer/(2*(W+H)); pAvg = pAvg ? pAvg*0.6+inst*0.4 : inst; pAcc = 0; pTimer = 0; }
+    var nowT = P.length*Tk()/(W*H);
+    if (hold === "P"){
+      if (Pset === null) Pset = P.length*Tk()/(W*H);
+      var Wt = Math.max(4, Math.min(16, P.length*Tk()/(Pset*H)));
+      W += (Wt-W)*Math.min(1, 2*dt); PL.$("Vw").value = W.toFixed(1); PL.$("Vw").dispatchEvent(new Event("input"));
+    } else if (hold === "T"){ /* nothing: user changes volume */ }
+    else if (hold === "V"){ /* user changes T */ }
+  }
+  function draw(){
+    ctx.clearRect(0,0,S.w,S.h); ctx.fillStyle = "#13223b"; ctx.fillRect(0,0,S.w,S.h);
+    var ox = 24, oy = 28, sc = Math.min((S.w-ox*2-60)/16, (S.h-oy-26)/H);
+    var cw = W*sc, chh = H*sc;
+    ctx.fillStyle = "rgba(255,255,255,.04)"; ctx.fillRect(ox,oy,cw,chh);
+    ctx.strokeStyle = "#cfe3ff"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ox+cw+4,oy); ctx.lineTo(ox,oy); ctx.lineTo(ox,oy+chh); ctx.lineTo(ox+cw+4,oy+chh); ctx.stroke();
+    // piston wall
+    ctx.fillStyle = "#8fa3c4"; ctx.fillRect(ox+cw,oy-6,10,chh+12); ctx.fillStyle = "#6b7b99"; ctx.fillRect(ox+cw+10,oy+chh/2-4,50,8);
+    var T = Tk(), t = (T-100)/800;
+    P.forEach(function(p){
+      var sp = vel(p)/(SPD*Math.sqrt(900)*1.6*1.3); sp = Math.min(1, sp);
+      ctx.fillStyle = "rgb("+Math.round(80+sp*175)+","+Math.round(160-sp*70)+","+Math.round(255-sp*185)+")";
+      ctx.beginPath(); ctx.arc(ox+p.x*sc, oy+p.y*sc, 4, 0, 7); ctx.fill();
+    });
+    // temperature scale text
+    ctx.fillStyle = "#9db0d0"; ctx.font = "12px sans-serif"; ctx.textAlign = "left"; ctx.fillText("Blue = slow, red = fast particles", ox, S.h-8);
+    ctx.textAlign = "right"; ctx.fillText(W.toFixed(1)+" nm × "+H+" nm", ox+cw, oy-10);
+    var avg = 0, sumv2 = 0; P.forEach(function(p){ var v = vel(p)*30; avg += v; sumv2 += v*v; }); avg /= Math.max(1,P.length);
+    var Pt = sumv2/(2*W*H);                       /* 2D kinetic theory: P = sum(m v^2) / (2 A) */
+    PL.set("r-P", pAvg.toFixed(1)); PL.set("r-Pt", Pt.toFixed(1)); PL.set("r-V", (W*H).toFixed(0)+" nm²");
+    PL.set("r-v", avg.toFixed(1)+" nm/unit"); PL.set("r-PV", (pAvg*W*H).toFixed(0));
+  }
+  ["n"].forEach(function(id){ PL.$(id).addEventListener("input", function(){ spawn(PL.val("n")); pAvg = 0; }); });
+  PL.$("Vw").addEventListener("input", function(){ var nw = PL.val("Vw"); if (Math.abs(nw-W) > 0.05 || PL.$("hold").value !== "P"){ if (PL.$("hold").value !== "P"){ var f = nw/W; P.forEach(function(p){ p.x *= f; }); W = nw; pAvg = 0; } } });
+  PL.$("T").addEventListener("input", function(){ pAvg = 0; });
+  PL.$("reset").onclick = reset;
+  reset();
+  PL.loop(function(dt){ var n = 3; for (var i = 0; i < n; i++) step(dt/n); draw(); });
+})();
+</script>
+</body>
+</html>

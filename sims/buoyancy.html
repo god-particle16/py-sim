@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Buoyancy and Archimedes' Principle Simulation</title>
+<meta name="description" content="Free buoyancy simulation. Drop objects of different density into liquids and see when they float or sink, with buoyant force, weight and submerged fraction.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="buoyancy">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Buoyancy and Archimedes' Principle</h1>
+  <p class="lead">Choose a liquid and a block density, then release the block. Will it float, sink or hover? Drag the block to place it anywhere in the tank.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Buoyancy simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="liq">Liquid</label><select id="liq"><option value="1000">Water (1000 kg/m&sup3;)</option><option value="1030">Sea water (1030 kg/m&sup3;)</option><option value="800">Oil (800 kg/m&sup3;)</option><option value="13600">Mercury (13600 kg/m&sup3;)</option></select></div>
+      <div class="ctl"><label for="rho">Block density <output id="rho-o"></output></label><input type="range" id="rho" min="200" max="3000" step="10" value="600" data-unit="kg/m&sup3;"></div>
+      <div class="ctl"><label for="side">Block size (cube) <output id="side-o"></output></label><input type="range" id="side" min="10" max="30" step="1" value="20" data-unit="cm"></div>
+      <div class="btns"><button class="btn" id="drop">Release</button><button class="btn alt" id="reset">Reset</button></div>
+      <div class="readouts">
+        <span>Block mass</span><span id="r-m">-</span>
+        <span>Weight</span><span id="r-w">-</span>
+        <span>Buoyant force</span><span id="r-b">-</span>
+        <span>Submerged fraction</span><span id="r-f">-</span>
+        <span>Verdict</span><span id="r-v">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>Any object placed in a fluid pushes some fluid out of the way. The fluid pushes back with an upward <strong>buoyant force</strong> equal to the <em>weight of the fluid displaced</em>. This is <strong>Archimedes' principle</strong>. If the buoyant force is bigger than the object's weight, the object rises; if it is smaller, the object sinks. A floating object settles at the depth where the displaced fluid weighs exactly the same as the object.</p>
+    <p>This works out neatly in terms of density. An object that is less dense than the liquid floats, with a submerged fraction equal to the density ratio. An object that is denser than the liquid sinks. Ships made of steel float because their hollow shape displaces a large volume of water compared with their mass.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">Buoyant force: F<sub>b</sub> = &rho;<sub>fluid</sub> V<sub>submerged</sub> g<br>Weight: W = &rho;<sub>object</sub> V g<br>Floating: F<sub>b</sub> = W &rArr; submerged fraction = &rho;<sub>object</sub> / &rho;<sub>fluid</sub><br>Sinks if &rho;<sub>object</sub> &gt; &rho;<sub>fluid</sub></div>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>In water, set the block density to 500 kg/m&sup3;. What fraction is submerged? Does it match 500/1000?</li>
+        <li>Increase the density towards 1000. What happens to the submerged fraction?</li>
+        <li>Set the density to 1000 in water. Does the block hover? Push it down by hand and see.</li>
+        <li>Switch to mercury. Can a block of density 3000 float? What about 7800 (steel)? Try a density of 3000.</li>
+        <li>Change the block size at a fixed density. Does the submerged fraction change?</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Believing heavy objects always sink. What matters is density, not weight: an iron ship floats, a small pebble sinks.</li>
+      <li>Thinking buoyant force depends on the object's material. It depends only on the volume of fluid displaced and the fluid's density.</li>
+      <li>Forgetting that a fully submerged object has a fixed buoyant force; going deeper does not change it.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A wooden block of density 700 kg/m&sup3; floats in water. What fraction is under water?</summary><p>700 / 1000 = 0.70, so 70 percent.</p></details>
+    <details class="q"><summary>2. A 0.008 m&sup3; block is fully submerged in water. What is the buoyant force?</summary><p>F = 1000 &times; 0.008 &times; 9.81 &asymp; 78 N.</p></details>
+    <details class="q"><summary>3. Why is it easier to float in sea water than in a freshwater lake?</summary><p>Sea water is denser, so less of your body has to be submerged to displace a weight of water equal to your own weight.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.4), ctx = S.ctx, g = 9.81;
+  var y, vy, dragging = false, released = false, dy0 = 0;
+  /* tank: 60 cm wide world, water surface at 50 cm from tank bottom, tank height 80 cm. y = block centre height from bottom (m) */
+  var TH = 0.8, SURF = 0.5;
+  function rhoF(){ return parseFloat(PL.$("liq").value); }
+  function rhoO(){ return PL.val("rho"); }
+  function a(){ return PL.val("side")/100; }
+  function reset(){ y = TH-a()/2-0.02; vy = 0; released = false; }
+  function sub(yc){
+    var s = a(), bottom = yc-s/2, top = yc+s/2;
+    var wet = Math.max(0, Math.min(s, SURF-bottom)); return wet/s;
+  }
+  function step(dt){
+    if (!released) return;
+    var s = a(), V = s*s*s, m = rhoO()*V, f = sub(y), Fb = rhoF()*V*f*g, W = m*g;
+    /* liquid damping (viscous + added mass effect) so the block settles instead of bouncing forever */
+    var kSpring = rhoF()*g*s*s, c = f > 0 ? 2*0.9*Math.sqrt(kSpring*m) : 0.05*m;
+    var acc = (Fb-W-c*vy)/(m*(1+0.5*f*rhoF()/rhoO()));
+    vy += acc*dt; y += vy*dt;
+    var lo = s/2+0.005; if (y < lo){ y = lo; vy = 0; }
+    var hi = TH-s/2; if (y > hi){ y = hi; vy = 0; }
+  }
+  function draw(){
+    ctx.clearRect(0,0,S.w,S.h); ctx.fillStyle = "#13223b"; ctx.fillRect(0,0,S.w,S.h);
+    var tw = Math.min(S.w*0.62, 420), tx = (S.w-tw)/2, tb = S.h-24, sc = (S.h-48)/TH;
+    function Y(yy){ return tb-yy*sc; }
+    // liquid
+    var rf = rhoF(), col = rf > 5000 ? "rgba(180,190,200,.85)" : rf < 900 ? "rgba(220,180,70,.45)" : "rgba(60,140,230,.45)";
+    ctx.fillStyle = col; ctx.fillRect(tx, Y(SURF), tw, SURF*sc);
+    ctx.strokeStyle = "#cfe3ff"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(tx,Y(TH)); ctx.lineTo(tx,tb); ctx.lineTo(tx+tw,tb); ctx.lineTo(tx+tw,Y(TH)); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(tx,Y(SURF)); ctx.lineTo(tx+tw,Y(SURF)); ctx.stroke();
+    // block
+    var s = a(), bw = s*sc, bx = tx+tw/2-bw/2, by = Y(y+s/2), dens = (rhoO()-200)/2800;
+    ctx.fillStyle = "rgb("+Math.round(235-dens*120)+","+Math.round(170-dens*80)+","+Math.round(90-dens*20)+")";
+    ctx.fillRect(bx,by,bw,bw); ctx.strokeStyle = "rgba(0,0,0,.4)"; ctx.lineWidth = 2; ctx.strokeRect(bx,by,bw,bw);
+    ctx.fillStyle = "#0f1b2d"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center"; ctx.fillText(rhoO()+" kg/m³", bx+bw/2, by+bw/2+4);
+    // force arrows
+    var V = s*s*s, m = rhoO()*V, f = sub(y), W = m*g, Fb = rf*V*f*g, k = 90/Math.max(W,Fb,1);
+    var cx = bx+bw+22;
+    PL.arrow(ctx, cx, by+bw/2, cx, by+bw/2+W*k, "#d1495b", 4); ctx.fillStyle = "#d1495b"; ctx.textAlign = "left"; ctx.font = "bold 12px sans-serif"; ctx.fillText("weight", cx+8, by+bw/2+W*k*0.6);
+    PL.arrow(ctx, cx+54, by+bw/2, cx+54, by+bw/2-Fb*k, "#7bd389", 4); ctx.fillStyle = "#7bd389"; ctx.fillText("buoyancy", cx+62, by+bw/2-Fb*k*0.6);
+    ctx.fillStyle = "#9db0d0"; ctx.font = "11px sans-serif"; ctx.textAlign = "left"; ctx.fillText("liquid "+rf+" kg/m³", tx+8, tb-8);
+    PL.set("r-m", m.toFixed(2)+" kg"); PL.set("r-w", W.toFixed(1)+" N"); PL.set("r-b", Fb.toFixed(1)+" N"); PL.set("r-f", (f*100).toFixed(0)+" %");
+    var r = rhoO(), verdict = Math.abs(r-rf) < rf*0.01 ? "Neutral (hovers)" : r < rf ? "Floats (ρ < liquid)" : "Sinks (ρ > liquid)";
+    PL.set("r-v", verdict);
+  }
+  var cv = S.c;
+  function pointerY(e){ var p = S.pos(e), sc = (S.h-48)/TH; return { y:(S.h-24-p.y)/sc, x:p.x }; }
+  cv.addEventListener("pointerdown", function(e){
+    var p = pointerY(e), tw = Math.min(S.w*0.62,420), cx = S.w/2;
+    if (Math.abs(p.x-cx) < a()*(S.h-48)/TH/2+20 && Math.abs(p.y-y) < a()/2+0.03){ dragging = true; released = false; vy = 0; dy0 = y-p.y; cv.setPointerCapture(e.pointerId); }
+  });
+  cv.addEventListener("pointermove", function(e){ if (!dragging) return; var p = pointerY(e); y = Math.max(a()/2+0.005, Math.min(TH-a()/2, p.y+dy0)); });
+  cv.addEventListener("pointerup", function(){ if (dragging){ dragging = false; released = true; } });
+  PL.$("drop").onclick = function(){ released = true; };
+  PL.$("reset").onclick = reset;
+  ["side","liq","rho"].forEach(function(id){ PL.$(id).addEventListener("input", function(){ if (!released) reset(); }); });
+  reset();
+  PL.loop(function(dt){ var n = Math.ceil(dt/0.002), d = dt/n; for (var i = 0; i < n; i++) step(d); draw(); });
+})();
+</script>
+</body>
+</html>

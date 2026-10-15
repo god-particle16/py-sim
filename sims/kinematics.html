@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kinematics Graphs Simulation</title>
+<meta name="description" content="Free kinematics simulation. Set acceleration and starting velocity, then watch position, velocity and acceleration graphs build as a car moves along a track.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="kinematics">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Kinematics Graphs</h1>
+  <p class="lead">Drive a car along a straight track. Choose its starting position, starting velocity and acceleration, then watch the position, velocity and acceleration graphs draw themselves.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Kinematics simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="x0">Start position <output id="x0-o"></output></label><input type="range" id="x0" min="-20" max="20" step="1" value="-10" data-unit="m"></div>
+      <div class="ctl"><label for="v0">Start velocity <output id="v0-o"></output></label><input type="range" id="v0" min="-10" max="10" step="0.5" value="2" data-unit="m/s" data-dec="1"></div>
+      <div class="ctl"><label for="a">Acceleration <output id="a-o"></output></label><input type="range" id="a" min="-4" max="4" step="0.1" value="1" data-unit="m/s&sup2;" data-dec="1"></div>
+      <div class="btns"><button class="btn" id="go">Play</button><button class="btn alt" id="reset">Reset</button></div>
+      <div class="readouts">
+        <span>Time</span><span id="r-t">-</span>
+        <span>Position x</span><span id="r-x">-</span>
+        <span>Velocity v</span><span id="r-v">-</span>
+        <span>Speed</span><span id="r-s">-</span>
+        <span>Distance travelled</span><span id="r-d">-</span>
+        <span>Displacement</span><span id="r-dp">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>Kinematics describes motion without asking what causes it. Three quantities tell the whole story: <strong>position</strong> (where you are), <strong>velocity</strong> (how fast position changes, with direction) and <strong>acceleration</strong> (how fast velocity changes). The three graphs are linked. The slope of the position graph is the velocity. The slope of the velocity graph is the acceleration. And going the other way, the area under the velocity graph is the change in position.</p>
+    <p>When acceleration is constant, the velocity graph is a straight line and the position graph is a parabola. If velocity and acceleration have opposite signs the car is slowing down; if they have the same sign it is speeding up.</p>
+    <h2>Key formulas (constant acceleration)</h2>
+    <div class="formula">v = v<sub>0</sub> + a t<br>x = x<sub>0</sub> + v<sub>0</sub> t + &frac12; a t&sup2;<br>v&sup2; = v<sub>0</sub>&sup2; + 2 a (x - x<sub>0</sub>)<br>Average velocity = displacement / time</div>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>Set acceleration to 0. What shape is the position graph? What is the velocity graph?</li>
+        <li>Set v0 = 6 m/s and a = -2 m/s&sup2;. When does the car stop? What happens next?</li>
+        <li>At the moment the car turns round, what is its velocity? Its acceleration?</li>
+        <li>Compare distance travelled and displacement in the previous experiment. Why do they differ?</li>
+        <li>Pick a position-graph point where the curve is steepest. What does the velocity graph show there?</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Thinking zero velocity means zero acceleration. At the turning point the velocity is zero but the acceleration is not.</li>
+      <li>Mixing up speed and velocity. Speed has no direction; velocity does.</li>
+      <li>Treating a negative acceleration as always "slowing down". It slows the car only while the velocity is positive.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A car starts from rest and accelerates at 3 m/s&sup2; for 4 s. How far does it go?</summary><p>x = &frac12; a t&sup2; = 0.5 &times; 3 &times; 16 = 24 m.</p></details>
+    <details class="q"><summary>2. What does the area under a velocity-time graph give?</summary><p>The displacement (change in position).</p></details>
+    <details class="q"><summary>3. A car moves at +4 m/s with a = -2 m/s&sup2;. After how long does it reverse direction?</summary><p>v = 0 when t = 4/2 = 2 s.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.35), ctx = S.ctx;
+  var T = 10, t = 0, running = false, dist = 0;
+  function X0(){ return PL.val("x0"); } function V0(){ return PL.val("v0"); } function A(){ return PL.val("a"); }
+  function xAt(tt){ return X0()+V0()*tt+0.5*A()*tt*tt; }
+  function vAt(tt){ return V0()+A()*tt; }
+  function reset(){ t = 0; dist = 0; running = false; PL.$("go").textContent = "Play"; }
+  function graph(gx, gy, gw, gh, title, fn, lo, hi, col, unit){
+    ctx.fillStyle = "rgba(255,255,255,.04)"; ctx.fillRect(gx,gy,gw,gh);
+    ctx.strokeStyle = "rgba(255,255,255,.1)"; ctx.lineWidth = 1;
+    for (var i = 0; i <= 10; i += 2){ var X = gx+i/T*gw; ctx.beginPath(); ctx.moveTo(X,gy); ctx.lineTo(X,gy+gh); ctx.stroke(); }
+    var zy = gy+gh-(0-lo)/(hi-lo)*gh;
+    if (zy > gy && zy < gy+gh){ ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.moveTo(gx,zy); ctx.lineTo(gx+gw,zy); ctx.stroke(); }
+    ctx.fillStyle = "#9db0d0"; ctx.font = "11px sans-serif"; ctx.textAlign = "left"; ctx.fillText(title+" ("+unit+")", gx+6, gy+13);
+    ctx.textAlign = "right"; ctx.fillText(hi.toFixed(0), gx-4, gy+10); ctx.fillText(lo.toFixed(0), gx-4, gy+gh);
+    ctx.strokeStyle = col; ctx.lineWidth = 2.2; ctx.beginPath();
+    for (var k = 0; k <= 200; k++){ var tt = Math.min(t, T)*k/200, y = fn(tt), X = gx+tt/T*gw, Y = gy+gh-(y-lo)/(hi-lo)*gh; if (k) ctx.lineTo(X,Y); else ctx.moveTo(X,Y); }
+    ctx.stroke();
+    var ty = fn(Math.min(t,T)); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(gx+Math.min(t,T)/T*gw, gy+gh-(ty-lo)/(hi-lo)*gh, 4, 0, 7); ctx.fill();
+  }
+  function range(fn){ var lo = 1e9, hi = -1e9; for (var i = 0; i <= 50; i++){ var y = fn(T*i/50); if (y < lo) lo = y; if (y > hi) hi = y; } lo = Math.min(lo,0); hi = Math.max(hi,0); var pad = Math.max(1,(hi-lo)*0.1); return [lo-pad, hi+pad]; }
+  function draw(){
+    ctx.clearRect(0,0,S.w,S.h); ctx.fillStyle = "#13223b"; ctx.fillRect(0,0,S.w,S.h);
+    var trackY = 62, tx0 = 30, tx1 = S.w-30, XR = 60, sc = (tx1-tx0)/XR, ox = (tx0+tx1)/2;
+    ctx.fillStyle = "#2a3d5c"; ctx.fillRect(tx0, trackY+14, tx1-tx0, 5);
+    ctx.fillStyle = "#9db0d0"; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+    for (var m = -30; m <= 30; m += 10){ var px = ox+m*sc; ctx.fillRect(px-0.5, trackY+19, 1, 6); ctx.fillText(m+" m", px, trackY+38); }
+    var x = xAt(Math.min(t,T)), cx = ox+Math.max(-30,Math.min(30,x))*sc;
+    ctx.fillStyle = "#f0a202"; ctx.fillRect(cx-18, trackY-8, 36, 18); ctx.fillStyle = "#0f1b2d"; ctx.fillRect(cx-9, trackY-14, 18, 8);
+    ctx.fillStyle = "#222"; ctx.beginPath(); ctx.arc(cx-10, trackY+12, 5, 0, 7); ctx.arc(cx+10, trackY+12, 5, 0, 7); ctx.fill();
+    var v = vAt(Math.min(t,T)); PL.arrow(ctx, cx, trackY-26, cx+v*6, trackY-26, "#2f9cf0", 3);
+    var a = A(); PL.arrow(ctx, cx, trackY-42, cx+a*14, trackY-42, "#d1495b", 3);
+    ctx.textAlign = "left"; ctx.font = "11px sans-serif"; ctx.fillStyle = "#2f9cf0"; ctx.fillText("v", tx0, trackY-24); ctx.fillStyle = "#d1495b"; ctx.fillText("a", tx0, trackY-40);
+    var gx = 52, gw = S.w-gx-14, top = 120, gap = 12, gh = (S.h-top-26-gap*2)/3;
+    var rx = range(xAt), rv = range(vAt), ra = range(function(){ return A(); });
+    graph(gx, top, gw, gh, "position", xAt, rx[0], rx[1], "#14a39b", "m");
+    graph(gx, top+gh+gap, gw, gh, "velocity", vAt, rv[0], rv[1], "#2f9cf0", "m/s");
+    graph(gx, top+2*(gh+gap), gw, gh, "acceleration", function(){ return A(); }, Math.min(ra[0],-1), Math.max(ra[1],1), "#d1495b", "m/s²");
+    ctx.fillStyle = "#9db0d0"; ctx.textAlign = "center"; ctx.fillText("time 0 to 10 s", gx+gw/2, S.h-6);
+    PL.set("r-t", Math.min(t,T).toFixed(2)+" s"); PL.set("r-x", x.toFixed(2)+" m"); PL.set("r-v", v.toFixed(2)+" m/s"); PL.set("r-s", Math.abs(v).toFixed(2)+" m/s");
+    PL.set("r-d", dist.toFixed(2)+" m"); PL.set("r-dp", (x-X0()).toFixed(2)+" m");
+  }
+  PL.$("go").onclick = function(){ if (t >= T) reset(); running = !running; this.textContent = running ? "Pause" : "Play"; };
+  PL.$("reset").onclick = reset;
+  ["x0","v0","a"].forEach(function(id){ PL.$(id).addEventListener("input", function(){ reset(); }); });
+  PL.loop(function(dt){
+    if (running && t < T){
+      var n = Math.ceil(dt/0.01), d = dt/n;
+      for (var i = 0; i < n && t < T; i++){ var x1 = xAt(t); t = Math.min(T, t+d); dist += Math.abs(xAt(t)-x1); }
+      if (t >= T){ running = false; PL.$("go").textContent = "Replay"; }
+    }
+    draw();
+  });
+})();
+</script>
+</body>
+</html>
