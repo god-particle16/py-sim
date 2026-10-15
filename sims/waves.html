@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wave Interference Simulation (Ripple Tank)</title>
+<meta name="description" content="Free wave interference simulation. A ripple tank with two sources shows constructive and destructive interference. Change wavelength, frequency, spacing and phase.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="waves">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Wave Interference</h1>
+  <p class="lead">A top view of a ripple tank. Two sources send out circular waves. Where crests meet crests the water moves a lot; where crests meet troughs it stays still.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Wave interference simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="src">Sources</label><select id="src"><option value="2">Two sources</option><option value="1">One source</option></select></div>
+      <div class="ctl"><label for="lam">Wavelength &lambda; <output id="lam-o"></output></label><input type="range" id="lam" min="0.5" max="3" step="0.05" value="1.2" data-unit="cm" data-dec="2"></div>
+      <div class="ctl"><label for="f">Frequency f <output id="f-o"></output></label><input type="range" id="f" min="0.2" max="3" step="0.1" value="1" data-unit="Hz" data-dec="1"></div>
+      <div class="ctl"><label for="d">Source separation d <output id="d-o"></output></label><input type="range" id="d" min="1" max="7" step="0.1" value="3.5" data-unit="cm" data-dec="1"></div>
+      <div class="ctl"><label for="ph">Phase difference <output id="ph-o"></output></label><input type="range" id="ph" min="0" max="360" step="5" value="0" data-unit="deg"></div>
+      <div class="ctl"><label for="mode">View</label><select id="mode"><option value="wave">Moving waves</option><option value="int">Time-averaged intensity</option></select></div>
+      <div class="btns"><button class="btn" id="pause">Pause</button></div>
+      <div class="readouts">
+        <span>Wave speed v = f&lambda;</span><span id="r-v">-</span>
+        <span>Period T</span><span id="r-T">-</span>
+        <span>Strong (constructive) lines</span><span id="r-c">-</span>
+        <span>Quiet (destructive) lines</span><span id="r-d">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>Waves do not bounce off each other. When two waves meet, their displacements simply add together. This is the <strong>principle of superposition</strong>. If a crest from one source arrives at the same moment as a crest from the other, they make a bigger crest: <em>constructive interference</em>. If a crest meets a trough, they cancel: <em>destructive interference</em>. Together these produce a fixed pattern of strong and quiet lines fanning out from the sources.</p>
+    <p>Whether a point is strong or quiet depends on the <strong>path difference</strong>, the difference between its distances to the two sources. The same idea explains the bright and dark fringes in Young's double-slit experiment with light, the dead spots between two loudspeakers and the way noise-cancelling headphones work.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">v = f &lambda;<br>T = 1 / f<br>Constructive (in-phase sources): path difference = n &lambda;   (n = 0, 1, 2 ...)<br>Destructive (in-phase sources): path difference = (n + &frac12;) &lambda;<br>Number of strong lines &asymp; 2 &times; floor(d / &lambda;) + 1</div>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>Switch to one source and watch the circular wavefronts spread out. Measure the wavelength between crests.</li>
+        <li>Switch back to two sources. Reduce the wavelength. What happens to the number of strong lines?</li>
+        <li>Move the sources further apart. Does the pattern get finer or coarser?</li>
+        <li>Set the phase difference to 180&deg;. What happens to the line straight ahead between the sources?</li>
+        <li>Change to the intensity view and count the strong lines. Compare with the readout.</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Thinking the water moves along with the wave. Each bit of water mostly moves up and down in place; the pattern travels.</li>
+      <li>Saying destructive interference destroys energy. The energy is redistributed to the strong lines.</li>
+      <li>Forgetting that a phase difference between the sources shifts every line sideways.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A wave has frequency 2 Hz and wavelength 3 cm. What is its speed?</summary><p>v = f&lambda; = 2 &times; 3 = 6 cm/s.</p></details>
+    <details class="q"><summary>2. A point is 7.5 cm from one in-phase source and 9.0 cm from the other, with &lambda; = 1.5 cm. Strong or quiet?</summary><p>The path difference is 1.5 cm, which is exactly one wavelength, so it is a strong (constructive) point.</p></details>
+    <details class="q"><summary>3. What is the central line when the sources are in antiphase?</summary><p>A quiet line, because every point on the middle line is equally far from both sources, but they are half a cycle apart.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.6), ctx = S.ctx;
+  var W = 16, H = 10, GW = 320, GH = 200;
+  var off = document.createElement("canvas"); off.width = GW; off.height = GH;
+  var octx = off.getContext("2d"), img = octx.createImageData(GW, GH);
+  var r1 = new Float32Array(GW*GH), r2 = new Float32Array(GW*GH), key = "";
+  var t = 0, paused = false;
+  function srcPos(){
+    var n = parseInt(PL.$("src").value,10), d = PL.val("d");
+    return n === 2 ? [[2, H/2-d/2],[2, H/2+d/2]] : [[2, H/2]];
+  }
+  function recompute(){
+    var P = srcPos(), k = P.length+"|"+P.join(",");
+    if (k === key) return; key = k;
+    for (var j = 0; j < GH; j++) for (var i = 0; i < GW; i++){
+      var x = (i+0.5)/GW*W, y = (j+0.5)/GH*H, idx = j*GW+i;
+      r1[idx] = Math.hypot(x-P[0][0], y-P[0][1]);
+      r2[idx] = P.length > 1 ? Math.hypot(x-P[1][0], y-P[1][1]) : 0;
+    }
+  }
+  function mix(a,b,t){ return a+(b-a)*t; }
+  function render(){
+    recompute();
+    var two = parseInt(PL.$("src").value,10) === 2, lam = PL.val("lam"), k = 2*Math.PI/lam, w = 2*Math.PI*PL.val("f"), ph = PL.val("ph")*Math.PI/180;
+    var intens = PL.$("mode").value === "int", data = img.data, n = GW*GH;
+    for (var idx = 0; idx < n; idx++){
+      var a1 = 1/Math.sqrt(1+r1[idx]*0.25), a2 = two ? 1/Math.sqrt(1+r2[idx]*0.25) : 0, R, G, B;
+      if (!intens){
+        var u = a1*Math.sin(k*r1[idx]-w*t) + (two ? a2*Math.sin(k*r2[idx]-w*t+ph) : 0);
+        var v = Math.max(-1, Math.min(1, u/(two?1.6:1)));
+        if (v >= 0){ R = mix(14,90,v); G = mix(30,230,v); B = mix(52,220,v); }
+        else { v = -v; R = mix(14,240,v); G = mix(30,150,v); B = mix(52,30,v); }
+      } else {
+        var I = two ? (a1*a1+a2*a2+2*a1*a2*Math.cos(k*(r1[idx]-r2[idx])-ph)) / 3.2 : a1*a1;
+        I = Math.max(0, Math.min(1, I)); I = Math.sqrt(I);
+        R = mix(10,255,I); G = mix(18,214,I*I); B = mix(40,120,I*I*I);
+      }
+      var o = idx*4; data[o] = R; data[o+1] = G; data[o+2] = B; data[o+3] = 255;
+    }
+    octx.putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = true; ctx.drawImage(off, 0, 0, S.w, S.h);
+    // sources + scale bar
+    var P = srcPos();
+    P.forEach(function(p){ ctx.fillStyle = "#fff"; ctx.strokeStyle = "#0f1b2d"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p[0]/W*S.w, p[1]/H*S.h, 6, 0, 7); ctx.fill(); ctx.stroke(); });
+    var bar = lam/W*S.w; ctx.fillStyle = "#fff"; ctx.fillRect(S.w-bar-18, S.h-22, bar, 3); ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("λ = "+lam.toFixed(2)+" cm", S.w-bar/2-18, S.h-28);
+  }
+  function readouts(){
+    var lam = PL.val("lam"), f = PL.val("f"), d = PL.val("d"), ph = PL.val("ph")/360, two = parseInt(PL.$("src").value,10) === 2;
+    PL.set("r-v", (lam*f).toFixed(2)+" cm/s"); PL.set("r-T", (1/f).toFixed(2)+" s");
+    if (!two){ PL.set("r-c","-"); PL.set("r-d","-"); return; }
+    var c = 0, q = 0;
+    for (var m = -50; m <= 50; m++){ if (Math.abs(lam*(m+ph)) < d) c++; if (Math.abs(lam*(m+0.5+ph)) < d) q++; }
+    PL.set("r-c", String(c)); PL.set("r-d", String(q));
+  }
+  PL.$("pause").onclick = function(){ paused = !paused; this.textContent = paused ? "Resume" : "Pause"; };
+  PL.loop(function(dt){ if (!paused) t += dt; render(); readouts(); });
+})();
+</script>
+</body>
+</html>

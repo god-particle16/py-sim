@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Electric Field and Charges Simulation</title>
+<meta name="description" content="Free electric field simulation. Place positive and negative point charges, drag them around and see field lines, field arrows and electric potential.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="efield">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Electric Field and Charges</h1>
+  <p class="lead">Click to add point charges, drag them to move them, and watch the field lines and potential change. Move your cursor to read the field and voltage at any point.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Electric field simulation canvas" style="cursor:crosshair"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="tool">Click action</label><select id="tool"><option value="pos">Add positive charge</option><option value="neg">Add negative charge</option><option value="del">Remove a charge</option></select></div>
+      <div class="ctl"><label for="q">New charge size <output id="q-o"></output></label><input type="range" id="q" min="1" max="5" step="1" value="3" data-unit="nC"></div>
+      <label class="check"><input type="checkbox" id="lines" checked> Field lines</label>
+      <label class="check"><input type="checkbox" id="arrows"> Field arrows</label>
+      <label class="check"><input type="checkbox" id="pot" checked> Potential colours</label>
+      <div class="btns"><button class="btn alt" id="p-dip">Dipole</button><button class="btn alt" id="p-two">Two +</button><button class="btn alt" id="p-pl">Plates</button><button class="btn alt" id="p-clr">Clear</button></div>
+      <div class="readouts">
+        <span>Charges</span><span id="r-n">0</span>
+        <span>Net charge</span><span id="r-net">0 nC</span>
+        <span>Field at cursor</span><span id="r-E">-</span>
+        <span>Potential at cursor</span><span id="r-V">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>Every electric charge changes the space around it. We describe that change with the <strong>electric field</strong>, which tells you the force a small positive test charge would feel at each point. Field lines are a picture of this: they start on positive charges, end on negative charges, point in the direction a positive test charge would be pushed, and are closest together where the field is strongest. Field lines never cross.</p>
+    <p>The colours show the <strong>electric potential</strong>, the energy per unit charge. Red regions are at positive potential and blue regions at negative potential. A positive charge "rolls downhill" from red towards blue, just as a ball rolls down a hill.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">Coulomb's law: F = k q<sub>1</sub> q<sub>2</sub> / r&sup2;<br>Field of a point charge: E = k q / r&sup2;   (k = 8.99 &times; 10&sup9; N m&sup2; / C&sup2;)<br>Potential of a point charge: V = k q / r<br>Many charges: add the fields as vectors, add the potentials as numbers<br>Force on a charge in a field: F = q E</div>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>Press Dipole. Where is the field strongest? Where is it weakest?</li>
+        <li>Press Two +. Find the point between them where the field is zero.</li>
+        <li>Press Plates. Is the field between the plates nearly uniform? What about outside?</li>
+        <li>Drag the cursor close to a charge and watch the field value. How does it grow as you approach?</li>
+        <li>Place a single positive charge, then move the cursor to twice the distance. By what factor does E fall?</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Thinking field lines are paths that charges follow. They show the force direction, not the trajectory.</li>
+      <li>Adding potentials as vectors. Potential is a scalar, so just add the numbers, including signs.</li>
+      <li>Forgetting that the field of a negative charge points inward, towards the charge.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A 2 nC charge is 3 m away. What is the field there?</summary><p>E = 8.99 &times; 10&sup9; &times; 2 &times; 10<sup>-9</sup> / 9 &asymp; 2.0 V/m (N/C).</p></details>
+    <details class="q"><summary>2. What happens to the field strength if the distance doubles?</summary><p>It falls to one quarter, because E is proportional to 1/r&sup2;.</p></details>
+    <details class="q"><summary>3. Why does the field between two parallel plates look uniform?</summary><p>Near the middle of the plates, the sideways contributions cancel and the lines run straight and evenly spaced from one plate to the other.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var W = 16, H = 10, K = 8.99, MAXC = 16;
+  var S = PL.stage("cv", 1.6), ctx = S.ctx;
+  var ch = [], drag = null, probe = null, dirty = true;
+  var GW = 160, GH = 100, off = document.createElement("canvas"); off.width = GW; off.height = GH;
+  var octx = off.getContext("2d"), img = octx.createImageData(GW, GH);
+  function sx(x){ return x/W*S.w; } function sy(y){ return y/H*S.h; }
+  function wx(px){ return px/S.w*W; } function wy(py){ return py/S.h*H; }
+  function field(x, y){
+    var ex = 0, ey = 0, v = 0;
+    for (var i = 0; i < ch.length; i++){
+      var dx = x-ch[i].x, dy = y-ch[i].y, r2 = dx*dx+dy*dy+0.0004, r = Math.sqrt(r2), k = K*ch[i].q/(r2*r);
+      ex += k*dx; ey += k*dy; v += K*ch[i].q/Math.max(r,0.05);
+    }
+    return { ex:ex, ey:ey, v:v };
+  }
+  function add(x,y,q){ if (ch.length < MAXC){ ch.push({ x:x, y:y, q:q }); dirty = true; } }
+  function hit(px,py){
+    for (var i = ch.length-1; i >= 0; i--) if (Math.hypot(sx(ch[i].x)-px, sy(ch[i].y)-py) < 12+3*Math.abs(ch[i].q)+6) return i;
+    return -1;
+  }
+  function potentialMap(){
+    var d = img.data;
+    for (var j = 0; j < GH; j++) for (var i = 0; i < GW; i++){
+      var v = field((i+0.5)/GW*W, (j+0.5)/GH*H).v, a = Math.tanh(Math.abs(v)/35)*0.8, o = (j*GW+i)*4;
+      if (v >= 0){ d[o] = 255; d[o+1] = 90; d[o+2] = 90; } else { d[o] = 70; d[o+1] = 130; d[o+2] = 255; }
+      d[o+3] = Math.round(a*255);
+    }
+    octx.putImageData(img,0,0);
+  }
+  function fieldLine(x0,y0,dir){
+    var pts = [[x0,y0]], x = x0, y = y0, h = 0.06;
+    for (var n = 0; n < 1600; n++){
+      var f = field(x,y), m = Math.hypot(f.ex,f.ey); if (m < 1e-6) break;
+      var ux = dir*f.ex/m, uy = dir*f.ey/m;
+      var f2 = field(x+ux*h/2, y+uy*h/2), m2 = Math.hypot(f2.ex,f2.ey); if (m2 < 1e-6) break;
+      x += dir*f2.ex/m2*h; y += dir*f2.ey/m2*h; pts.push([x,y]);
+      if (x < -0.2 || x > W+0.2 || y < -0.2 || y > H+0.2) break;
+      var stop = false;
+      for (var i = 0; i < ch.length; i++) if (Math.sign(ch[i].q)*dir < 0 && Math.hypot(x-ch[i].x,y-ch[i].y) < 0.14){ stop = true; break; }
+      if (stop) break;
+    }
+    return pts;
+  }
+  function draw(){
+    ctx.clearRect(0,0,S.w,S.h); ctx.fillStyle = "#0f1b2d"; ctx.fillRect(0,0,S.w,S.h);
+    if (PL.$("pot").checked){ if (dirty) potentialMap(); ctx.imageSmoothingEnabled = true; ctx.drawImage(off,0,0,S.w,S.h); }
+    dirty = false;
+    // arrows
+    if (PL.$("arrows").checked){
+      for (var j = 0; j < 14; j++) for (var i = 0; i < 22; i++){
+        var x = (i+0.5)/22*W, y = (j+0.5)/14*H, f = field(x,y), m = Math.hypot(f.ex,f.ey);
+        var near = ch.some(function(c){ return Math.hypot(c.x-x,c.y-y) < 0.4; }); if (near || m < 1e-6) continue;
+        var L = 26*Math.tanh(m/12)+4, ux = f.ex/m, uy = f.ey/m, px = sx(x), py = sy(y);
+        PL.arrow(ctx, px-ux*L/2, py-uy*L/2, px+ux*L/2, py+uy*L/2, "rgba(207,227,255,.85)", 1.6);
+      }
+    }
+    // lines
+    if (PL.$("lines").checked && ch.length){
+      var pos = ch.filter(function(c){ return c.q > 0; }), dirn = 1, src = pos;
+      if (!pos.length){ src = ch.filter(function(c){ return c.q < 0; }); dirn = -1; }
+      ctx.strokeStyle = "rgba(255,230,160,.9)"; ctx.lineWidth = 1.4;
+      src.forEach(function(c){
+        var n = Math.min(28, Math.round(6*Math.abs(c.q))+4);
+        for (var a = 0; a < n; a++){
+          var th = 2*Math.PI*(a+0.5)/n, pts = fieldLine(c.x+0.16*Math.cos(th), c.y+0.16*Math.sin(th), dirn);
+          ctx.beginPath(); pts.forEach(function(p,i){ if (i) ctx.lineTo(sx(p[0]),sy(p[1])); else ctx.moveTo(sx(p[0]),sy(p[1])); }); ctx.stroke();
+          if (pts.length > 14){ var m = pts[Math.floor(pts.length*0.45)], m2 = pts[Math.floor(pts.length*0.45)+1]; if (m2) PL.arrow(ctx, sx(m[0]), sy(m[1]), sx(m2[0]), sy(m2[1]), "rgba(255,230,160,.95)", 1.4); }
+        }
+      });
+    }
+    // charges
+    ch.forEach(function(c){
+      var r = 10+3*Math.abs(c.q); ctx.fillStyle = c.q > 0 ? "#e5484d" : "#3b82f6"; ctx.beginPath(); ctx.arc(sx(c.x),sy(c.y),r,0,7); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center"; ctx.fillText((c.q > 0 ? "+" : "−")+Math.abs(c.q), sx(c.x), sy(c.y)+5);
+    });
+    // probe
+    if (probe){
+      var px = sx(probe.x), py = sy(probe.y), f = field(probe.x, probe.y), m = Math.hypot(f.ex,f.ey);
+      ctx.strokeStyle = "#7bd389"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(px,py,6,0,7); ctx.stroke();
+      if (m > 1e-6) PL.arrow(ctx, px, py, px+f.ex/m*(14+22*Math.tanh(m/10)), py+f.ey/m*(14+22*Math.tanh(m/10)), "#7bd389", 2.5);
+      PL.set("r-E", m.toFixed(2)+" V/m"); PL.set("r-V", f.v.toFixed(1)+" V");
+    } else { PL.set("r-E","-"); PL.set("r-V","-"); }
+    if (!ch.length){ ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.font = "15px sans-serif"; ctx.textAlign = "center"; ctx.fillText("Click anywhere to add a charge, or press a preset button", S.w/2, S.h/2); }
+    PL.set("r-n", String(ch.length)); PL.set("r-net", ch.reduce(function(a,c){ return a+c.q; },0)+" nC");
+  }
+  var cv = S.c;
+  cv.addEventListener("pointerdown", function(e){
+    var p = S.pos(e), i = hit(p.x,p.y), tool = PL.$("tool").value;
+    cv.setPointerCapture(e.pointerId);
+    if (i >= 0){ if (tool === "del"){ ch.splice(i,1); dirty = true; } else drag = i; return; }
+    if (tool === "pos") add(wx(p.x), wy(p.y), PL.val("q")); else if (tool === "neg") add(wx(p.x), wy(p.y), -PL.val("q"));
+  });
+  cv.addEventListener("pointermove", function(e){
+    var p = S.pos(e); probe = { x:wx(p.x), y:wy(p.y) };
+    if (drag !== null && ch[drag]){ ch[drag].x = Math.max(0.1,Math.min(W-0.1,probe.x)); ch[drag].y = Math.max(0.1,Math.min(H-0.1,probe.y)); dirty = true; }
+  });
+  cv.addEventListener("pointerup", function(){ drag = null; });
+  cv.addEventListener("pointerleave", function(){ if (drag === null) probe = null; });
+  PL.$("pot").addEventListener("change", function(){ dirty = true; });
+  PL.$("p-clr").onclick = function(){ ch = []; dirty = true; };
+  PL.$("p-dip").onclick = function(){ ch = [{x:5,y:5,q:3},{x:11,y:5,q:-3}]; dirty = true; };
+  PL.$("p-two").onclick = function(){ ch = [{x:5,y:5,q:3},{x:11,y:5,q:3}]; dirty = true; };
+  PL.$("p-pl").onclick = function(){ ch = []; for (var i = 0; i < 7; i++){ ch.push({x:3+i*1.7,y:3,q:1}); } for (var j = 0; j < 7; j++){ ch.push({x:3+j*1.7,y:7,q:-1}); } ch = ch.slice(0,14); dirty = true; };
+  PL.loop(function(){ draw(); });
+  PL.$("p-dip").click();
+})();
+</script>
+</body>
+</html>

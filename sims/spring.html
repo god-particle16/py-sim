@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spring and Mass (Simple Harmonic Motion) Simulation</title>
+<meta name="description" content="Free spring-mass simulation. Explore Hooke's law, simple harmonic motion, damping, period and the exchange between kinetic and potential energy.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="spring">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Spring and Mass (SHM)</h1>
+  <p class="lead">Drag the block, release it and watch simple harmonic motion. The graph shows position over time and the bars show how energy moves between kinetic and potential forms.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Spring mass simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="k">Spring constant k <output id="k-o"></output></label><input type="range" id="k" min="2" max="60" step="1" value="12" data-unit="N/m"></div>
+      <div class="ctl"><label for="m">Mass m <output id="m-o"></output></label><input type="range" id="m" min="0.2" max="5" step="0.1" value="1" data-unit="kg" data-dec="1"></div>
+      <div class="ctl"><label for="b">Damping b <output id="b-o"></output></label><input type="range" id="b" min="0" max="3" step="0.05" value="0.1" data-dec="2"></div>
+      <div class="btns"><button class="btn" id="go">Pause</button><button class="btn alt" id="reset">Reset</button></div>
+      <div class="readouts">
+        <span>Angular frequency &omega;</span><span id="r-w">-</span>
+        <span>Period T</span><span id="r-t">-</span>
+        <span>Frequency f</span><span id="r-f">-</span>
+        <span>Displacement x</span><span id="r-x">-</span>
+        <span>Total energy</span><span id="r-e">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>When you stretch or compress a spring, it pulls or pushes back with a force proportional to the displacement. This is <strong>Hooke's law</strong>. A force that always points towards the equilibrium position and grows with distance produces <strong>simple harmonic motion</strong> (SHM): a smooth, repeating oscillation described by a sine wave.</p>
+    <p>Energy flows back and forth. At the ends of the motion the block is momentarily at rest and all the energy is stored in the spring. At the centre the spring is relaxed and all the energy is kinetic. Without damping, the total never changes.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">F = -k x   (Hooke's law)<br>&omega; = &radic;(k / m)<br>T = 2&pi; &radic;(m / k)<br>x(t) = A cos(&omega; t)<br>E = &frac12; k A&sup2; = &frac12; m v&sup2; + &frac12; k x&sup2;</div>
+    <p>With damping, a friction-like force -b v removes energy and the amplitude shrinks exponentially. If damping is very strong the block creeps back without oscillating at all (overdamped).</p>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>Set damping to 0. Watch the energy bars: do the kinetic and potential bars ever add up to more than the total?</li>
+        <li>Double the mass. How does the period change? Predict first, then check.</li>
+        <li>Make the spring four times stiffer. What happens to the period?</li>
+        <li>Release the block from a larger and a smaller displacement. Does the period change?</li>
+        <li>Raise damping above 2.5 and see the motion become overdamped.</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Believing the period depends on amplitude. For an ideal spring it does not.</li>
+      <li>Forgetting the minus sign in Hooke's law. The force opposes the displacement.</li>
+      <li>Thinking the velocity is greatest at the ends. It is greatest at the centre.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A 0.5 kg mass on a 50 N/m spring. What is the period?</summary><p>T = 2&pi;&radic;(0.5/50) = 2&pi;(0.1) &asymp; 0.63 s.</p></details>
+    <details class="q"><summary>2. Where is the acceleration zero?</summary><p>At the equilibrium position, because the spring force is zero there.</p></details>
+    <details class="q"><summary>3. By what factor does the maximum speed change if the amplitude doubles?</summary><p>It doubles, because v<sub>max</sub> = A&omega; and &omega; stays the same.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.6), ctx = S.ctx;
+  var x = 0.8, v = 0, t = 0, running = true, dragging = false, hist = [];
+  var XMAX = 1.2;
+  function K(){ return PL.val("k"); } function M(){ return PL.val("m"); } function B(){ return PL.val("b"); }
+  function sc(){ return S.w*0.27; }
+  function x0(){ return S.w*0.46; }
+  function reset(){ x = 0.8; v = 0; t = 0; hist = []; }
+  function step(dt){
+    var a = (-K()*x - B()*v)/M();
+    v += a*dt; x += v*dt; t += dt;
+  }
+  function spring(x1, y, x2, coils, amp){
+    ctx.beginPath(); ctx.moveTo(x1,y);
+    var seg = (x2-x1-20)/coils; ctx.lineTo(x1+10,y);
+    for (var i = 0; i < coils; i++){
+      ctx.lineTo(x1+10+seg*(i+0.25), y-amp); ctx.lineTo(x1+10+seg*(i+0.75), y+amp); ctx.lineTo(x1+10+seg*(i+1), y);
+    }
+    ctx.lineTo(x2,y); ctx.stroke();
+  }
+  function draw(){
+    ctx.clearRect(0,0,S.w,S.h); ctx.fillStyle = "#13223b"; ctx.fillRect(0,0,S.w,S.h);
+    var topH = S.h*0.46, ty = topH*0.62, bw = 36+M()*14, bh = 40+M()*6;
+    var cx = x0()+x*sc();
+    // floor and wall
+    ctx.fillStyle = "#2a3d5c"; ctx.fillRect(0, ty+bh/2, S.w, 6);
+    ctx.fillStyle = "#6b7b99"; ctx.fillRect(14, ty-bh, 12, bh*2);
+    // equilibrium marker
+    ctx.setLineDash([4,5]); ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.beginPath(); ctx.moveTo(x0(), 14); ctx.lineTo(x0(), ty+bh/2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#9db0d0"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText("x = 0", x0(), 12);
+    // spring + block
+    var left = cx-bw/2;
+    ctx.strokeStyle = "#14a39b"; ctx.lineWidth = 2.5; spring(26, ty, left, 14, 12+Math.min(10,(left-26)>0? 2:0));
+    ctx.fillStyle = dragging ? "#ffd166" : "#f0a202"; ctx.fillRect(left, ty-bh/2, bw, bh);
+    ctx.strokeStyle = "rgba(0,0,0,.3)"; ctx.lineWidth = 1.5; ctx.strokeRect(left, ty-bh/2, bw, bh);
+    ctx.fillStyle = "#13223b"; ctx.font = "bold 12px sans-serif"; ctx.fillText(M().toFixed(1)+" kg", cx, ty+4);
+    // force arrow
+    var F = -K()*x; PL.arrow(ctx, cx, ty-bh/2-12, cx+Math.max(-110,Math.min(110,F*4)), ty-bh/2-12, "#d1495b", 3);
+    ctx.fillStyle = "#d1495b"; ctx.textAlign = "left"; ctx.fillText("spring force", cx+4, ty-bh/2-20);
+
+    // energy bars (top right)
+    var ke = 0.5*M()*v*v, pe = 0.5*K()*x*x, tot = ke+pe, emax = 0.5*K()*XMAX*XMAX;
+    var bx = S.w-170, by = 22, bwid = 120;
+    ctx.textAlign = "left"; ctx.font = "11px sans-serif";
+    [["Kinetic",ke,"#2f6fed"],["Potential",pe,"#f0a202"],["Total",tot,"#14a39b"]].forEach(function(r,i){
+      var yy = by+i*26; ctx.fillStyle = "#9db0d0"; ctx.fillText(r[0], bx-52, yy+11);
+      ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(bx+6, yy, bwid, 14);
+      ctx.fillStyle = r[2]; ctx.fillRect(bx+6, yy, Math.min(bwid, bwid*r[1]/emax), 14);
+    });
+    // graph
+    var gx = 54, gy = S.h*0.52, gw = S.w-gx-16, gh = S.h-gy-26;
+    ctx.fillStyle = "rgba(255,255,255,.04)"; ctx.fillRect(gx,gy,gw,gh);
+    ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(gx,gy+gh/2); ctx.lineTo(gx+gw,gy+gh/2); ctx.stroke();
+    ctx.fillStyle = "#9db0d0"; ctx.textAlign = "right"; ctx.fillText("+"+XMAX+" m", gx-6, gy+10); ctx.fillText("0", gx-6, gy+gh/2+4); ctx.fillText("-"+XMAX+" m", gx-6, gy+gh-2);
+    ctx.textAlign = "center"; ctx.fillText("position vs time (last 10 s)", gx+gw/2, S.h-8);
+    var t0 = t-10; ctx.strokeStyle = "#14a39b"; ctx.lineWidth = 2; ctx.beginPath(); var f = true;
+    hist.forEach(function(h){
+      if (h[0] < t0) return;
+      var X = t < 10 ? gx+h[0]/10*gw : gx+(h[0]-t0)/10*gw, Y = gy+gh/2-h[1]/XMAX*(gh/2-3);
+      if (f){ ctx.moveTo(X,Y); f = false; } else ctx.lineTo(X,Y);
+    });
+    ctx.stroke();
+    var w = Math.sqrt(K()/M());
+    PL.set("r-w", w.toFixed(2)+" rad/s"); PL.set("r-t", (2*Math.PI/w).toFixed(3)+" s"); PL.set("r-f", (w/(2*Math.PI)).toFixed(3)+" Hz");
+    PL.set("r-x", x.toFixed(2)+" m"); PL.set("r-e", tot.toFixed(2)+" J");
+  }
+  var cv = S.c;
+  cv.addEventListener("pointerdown", function(e){
+    var p = S.pos(e); if (Math.abs(p.x-(x0()+x*sc())) < 50 && p.y < S.h*0.52){ dragging = true; cv.setPointerCapture(e.pointerId); }
+  });
+  cv.addEventListener("pointermove", function(e){
+    if (!dragging) return; var p = S.pos(e);
+    x = Math.max(-XMAX, Math.min(XMAX, (p.x-x0())/sc())); v = 0; hist = []; t = 0;
+  });
+  cv.addEventListener("pointerup", function(){ dragging = false; });
+  PL.$("go").onclick = function(){ running = !running; this.textContent = running ? "Pause" : "Resume"; };
+  PL.$("reset").onclick = reset;
+  PL.loop(function(dt){
+    if (running && !dragging){
+      var n = Math.ceil(dt/0.002), d = dt/n; for (var i = 0; i < n; i++) step(d);
+      hist.push([t,x]); if (hist.length > 1500) hist.shift();
+    }
+    draw();
+  });
+})();
+</script>
+</body>
+</html>

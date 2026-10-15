@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gravity and Orbits Simulation (Kepler's Laws)</title>
+<meta name="description" content="Free orbit simulation. Launch a planet around a star and explore circular, elliptical and escape orbits, orbital period and Kepler's laws.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="orbits">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Gravity and Orbits</h1>
+  <p class="lead">Launch a planet sideways from a chosen distance. Is the path a circle, an ellipse or an escape? Distances are in astronomical units (1 AU is the Earth-Sun distance) and time is in years.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Orbit simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="M">Star mass <output id="M-o"></output></label><input type="range" id="M" min="0.5" max="3" step="0.1" value="1" data-unit="Suns" data-dec="1"></div>
+      <div class="ctl"><label for="r0">Starting distance <output id="r0-o"></output></label><input type="range" id="r0" min="0.5" max="2" step="0.05" value="1" data-unit="AU" data-dec="2"></div>
+      <div class="ctl"><label for="vf">Launch speed (1.00 = circular) <output id="vf-o"></output></label><input type="range" id="vf" min="0.3" max="1.6" step="0.01" value="0.8" data-dec="2"></div>
+      <div class="ctl"><label for="zoom">Zoom <output id="zoom-o"></output></label><input type="range" id="zoom" min="0.4" max="3" step="0.1" value="1" data-dec="1"></div>
+      <div class="ctl"><label for="ts">Time speed <output id="ts-o"></output></label><input type="range" id="ts" min="0.3" max="3" step="0.1" value="1" data-dec="1"></div>
+      <label class="check"><input type="checkbox" id="sect" checked> Show equal-time sectors (Kepler's 2nd law)</label>
+      <div class="btns"><button class="btn" id="relaunch">Relaunch</button><button class="btn alt" id="circ">Circular</button><button class="btn alt" id="esc">Escape</button></div>
+      <div class="readouts">
+        <span>Orbit type</span><span id="r-type">-</span>
+        <span>Eccentricity e</span><span id="r-e">-</span>
+        <span>Period</span><span id="r-T">-</span>
+        <span>Distance now</span><span id="r-r">-</span>
+        <span>Speed now</span><span id="r-v">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>Gravity pulls the planet towards the star. If the planet were dropped from rest it would fall straight in. Because it is launched sideways, it keeps missing: it falls towards the star, but its sideways motion carries it around. An orbit is simply a continuous fall that never hits the ground. Launch slowly and the planet swings close to the star on a tight ellipse. Launch at exactly the circular speed and the orbit is a circle. Launch faster and it climbs to a far point before falling back. Above the escape speed it never returns.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">F = G M m / r&sup2;<br>Circular orbit speed: v = &radic;(G M / r)<br>Escape speed: v<sub>esc</sub> = &radic;2 &times; v<sub>circular</sub> &asymp; 1.41 v<sub>circular</sub><br>Kepler's 3rd law: T&sup2; = (4&pi;&sup2; / G M) a&sup3;   (T in years, a in AU, M in Suns: T&sup2; = a&sup3; / M)</div>
+    <p><strong>Kepler's laws.</strong> (1) Orbits are ellipses with the star at one focus. (2) A line from the star to the planet sweeps out equal areas in equal times, so the planet moves faster when it is closer. (3) The square of the period is proportional to the cube of the average distance.</p>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>Press Circular. Check the period against Kepler's third law: with M = 1 Sun and r = 1 AU it should be 1 year.</li>
+        <li>Set the speed to 0.8 and turn on the sectors. Do the coloured wedges have different shapes but the same area?</li>
+        <li>Increase the launch speed slowly from 1.0. At what value does the planet stop returning? Compare with 1.41.</li>
+        <li>Double the star mass. What happens to the period of a circular orbit?</li>
+        <li>Start at 0.5 AU and then 2 AU, both with circular speed. Which planet has the shorter year?</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Thinking a planet in orbit feels no gravity. It is constantly accelerating towards the star.</li>
+      <li>Believing the planet moves at constant speed. On an ellipse it speeds up near the star and slows down far away.</li>
+      <li>Imagining that a spacecraft has to "escape gravity". It only needs enough speed to coast away, since gravity never fully vanishes.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A planet is 4 AU from a 1-Sun star on a circular orbit. What is its period?</summary><p>T&sup2; = a&sup3; = 64, so T = 8 years.</p></details>
+    <details class="q"><summary>2. Where on an elliptical orbit is the planet fastest?</summary><p>At the closest point to the star (perihelion), because angular momentum is conserved and the radius is smallest.</p></details>
+    <details class="q"><summary>3. Why do satellites in lower orbits go around faster?</summary><p>Gravity is stronger closer in, so a higher speed is needed to stay on a circular path there.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.5), ctx = S.ctx;
+  var px, py, vx, vy, GM, trail = [], secs = [], tsec = 0, tsnap = 0, lastSnap = null, simT = 0;
+  function launch(){
+    var M = PL.val("M"), r0 = PL.val("r0"), vf = PL.val("vf");
+    GM = 4*Math.PI*Math.PI*M;
+    var vc = Math.sqrt(GM/r0), v0 = vf*vc;
+    px = r0; py = 0; vx = 0; vy = v0; trail = []; secs = []; simT = 0; tsnap = 0; lastSnap = { x:px, y:py };
+    var eps = 0.5*v0*v0-GM/r0, h = r0*v0, e = Math.sqrt(Math.max(0,1+2*eps*h*h/(GM*GM)));
+    var type, a;
+    if (Math.abs(vf-1) < 0.005) type = "Circular";
+    else if (eps < -1e-6){ type = "Ellipse"; }
+    else if (Math.abs(eps) <= 1e-6 || Math.abs(vf-Math.SQRT2) < 0.005) type = "Parabolic (escape)";
+    else type = "Hyperbolic (escape)";
+    PL.set("r-type", type); PL.set("r-e", e.toFixed(3));
+    if (eps < -1e-6){ a = -GM/(2*eps); PL.set("r-T", (2*Math.PI*Math.sqrt(a*a*a/GM)).toFixed(2)+" yr"); tsec = Math.PI*2*Math.sqrt(a*a*a/GM)/12; }
+    else { PL.set("r-T", "none (escapes)"); tsec = 0.1; }
+  }
+  function accel(x, y){ var r2 = x*x+y*y, r = Math.sqrt(r2), k = -GM/(r2*r); return [k*x, k*y]; }
+  function stepOrbit(dt){
+    var a = accel(px,py);
+    vx += 0.5*dt*a[0]; vy += 0.5*dt*a[1];
+    px += vx*dt; py += vy*dt;
+    a = accel(px,py);
+    vx += 0.5*dt*a[0]; vy += 0.5*dt*a[1];
+    simT += dt; tsnap += dt;
+    if (tsnap >= tsec){
+      tsnap = 0; secs.push([lastSnap.x, lastSnap.y, px, py]); lastSnap = { x:px, y:py }; if (secs.length > 12) secs.shift();
+    }
+  }
+  function draw(){
+    ctx.clearRect(0,0,S.w,S.h);
+    var g = ctx.createRadialGradient(S.w/2,S.h/2,10,S.w/2,S.h/2,S.w*0.7); g.addColorStop(0,"#16294a"); g.addColorStop(1,"#070d18");
+    ctx.fillStyle = g; ctx.fillRect(0,0,S.w,S.h);
+    var sc = Math.min(S.w,S.h)/2/2.6*PL.val("zoom"), cx = S.w/2, cy = S.h/2;
+    // star field (fixed pseudo-random)
+    ctx.fillStyle = "rgba(255,255,255,.5)"; for (var i = 0; i < 60; i++){ ctx.fillRect((i*137.5)%S.w, (i*71.3)%S.h, 1.5, 1.5); }
+    // distance rings
+    ctx.strokeStyle = "rgba(255,255,255,.08)"; ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.font = "10px sans-serif"; ctx.textAlign = "left";
+    for (var r = 0.5; r <= 4; r += 0.5){ ctx.beginPath(); ctx.arc(cx,cy,r*sc,0,7); ctx.stroke(); if (r*sc < S.w/2) ctx.fillText(r+" AU", cx+r*sc*0.707+2, cy-r*sc*0.707); }
+    // sectors
+    if (PL.$("sect").checked){
+      secs.forEach(function(s, i){
+        ctx.fillStyle = i%2 ? "rgba(20,163,155,.35)" : "rgba(240,162,2,.35)";
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+s[0]*sc, cy-s[1]*sc); ctx.lineTo(cx+s[2]*sc, cy-s[3]*sc); ctx.closePath(); ctx.fill();
+      });
+    }
+    // trail
+    ctx.strokeStyle = "rgba(160,200,255,.65)"; ctx.lineWidth = 1.6; ctx.beginPath();
+    trail.forEach(function(p,i){ var X = cx+p[0]*sc, Y = cy-p[1]*sc; if (i) ctx.lineTo(X,Y); else ctx.moveTo(X,Y); }); ctx.stroke();
+    // star
+    var M = PL.val("M"), sr = 9+5*M, sg = ctx.createRadialGradient(cx,cy,2,cx,cy,sr*2.2); sg.addColorStop(0,"#fff6c8"); sg.addColorStop(.35,"#f0a202"); sg.addColorStop(1,"rgba(240,162,2,0)");
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(cx,cy,sr*2.2,0,7); ctx.fill();
+    ctx.fillStyle = "#ffd166"; ctx.beginPath(); ctx.arc(cx,cy,sr,0,7); ctx.fill();
+    // planet
+    var X = cx+px*sc, Y = cy-py*sc;
+    ctx.fillStyle = "#2f9cf0"; ctx.beginPath(); ctx.arc(X,Y,7,0,7); ctx.fill();
+    PL.arrow(ctx, X, Y, X+vx*sc*0.06, Y-vy*sc*0.06, "#7bd389", 2.5);
+    var r = Math.hypot(px,py), sp = Math.hypot(vx,vy);
+    PL.set("r-r", r.toFixed(2)+" AU"); PL.set("r-v", (sp*4.74).toFixed(1)+" km/s");
+  }
+  ["M","r0","vf"].forEach(function(id){ PL.$(id).addEventListener("input", launch); });
+  PL.$("relaunch").onclick = launch;
+  PL.$("circ").onclick = function(){ PL.$("vf").value = 1; PL.$("vf").dispatchEvent(new Event("input")); };
+  PL.$("esc").onclick = function(){ PL.$("vf").value = 1.45; PL.$("vf").dispatchEvent(new Event("input")); };
+  launch();
+  var tc = 0;
+  PL.loop(function(dt){
+    var T = dt*PL.val("ts")*0.33, remaining = T;
+    while (remaining > 1e-9){
+      var r = Math.hypot(px,py); if (r < 0.02) { launch(); break; }
+      var sub = Math.min(remaining, 0.003, 0.01*Math.pow(r,1.5)/Math.sqrt(GM/39.5));
+      stepOrbit(sub); remaining -= sub;
+    }
+    tc += dt; if (tc > 0.03){ tc = 0; trail.push([px,py]); if (trail.length > 2500) trail.shift(); }
+    if (Math.hypot(px,py) > 60) launch();
+    draw();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://your-domain.com/index.html</loc></url>
+  <url><loc>https://your-domain.com/about.html</loc></url>
+  <url><loc>https://your-domain.com/contact.html</loc></url>
+  <url><loc>https://your-domain.com/privacy.html</loc></url>
+  <url><loc>https://your-domain.com/terms.html</loc></url>
+  <url><loc>https://your-domain.com/sims/projectile.html</loc></url>
+  <url><loc>https://your-domain.com/sims/pendulum.html</loc></url>
+  <url><loc>https://your-domain.com/sims/spring.html</loc></url>
+  <url><loc>https://your-domain.com/sims/incline.html</loc></url>
+  <url><loc>https://your-domain.com/sims/collisions.html</loc></url>
+  <url><loc>https://your-domain.com/sims/orbits.html</loc></url>
+  <url><loc>https://your-domain.com/sims/waves.html</loc></url>
+  <url><loc>https://your-domain.com/sims/refraction.html</loc></url>
+  <url><loc>https://your-domain.com/sims/circuits.html</loc></url>
+  <url><loc>https://your-domain.com/sims/efield.html</loc></url>
+</urlset>

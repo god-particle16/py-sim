@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Collisions in 1D Simulation (Momentum and Energy)</title>
+<meta name="description" content="Free 1D collision simulation. Explore elastic and inelastic collisions and see that momentum is conserved while kinetic energy may not be.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="collisions">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Collisions in 1D</h1>
+  <p class="lead">Two carts on a frictionless track. Choose masses, speeds and how bouncy the collision is, then compare momentum and kinetic energy before and after.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Collision simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="m1">Blue mass m1 <output id="m1-o"></output></label><input type="range" id="m1" min="0.5" max="8" step="0.5" value="2" data-unit="kg" data-dec="1"></div>
+      <div class="ctl"><label for="m2">Orange mass m2 <output id="m2-o"></output></label><input type="range" id="m2" min="0.5" max="8" step="0.5" value="3" data-unit="kg" data-dec="1"></div>
+      <div class="ctl"><label for="v1">Blue velocity <output id="v1-o"></output></label><input type="range" id="v1" min="-5" max="5" step="0.5" value="3" data-unit="m/s" data-dec="1"></div>
+      <div class="ctl"><label for="v2">Orange velocity <output id="v2-o"></output></label><input type="range" id="v2" min="-5" max="5" step="0.5" value="0" data-unit="m/s" data-dec="1"></div>
+      <div class="ctl"><label for="e">Elasticity e <output id="e-o"></output></label><input type="range" id="e" min="0" max="1" step="0.05" value="1" data-dec="2"></div>
+      <label class="check"><input type="checkbox" id="walls" checked> Bouncy walls at both ends</label>
+      <div class="ctl"><label for="ts">Time speed <output id="ts-o"></output></label><input type="range" id="ts" min="0.1" max="1" step="0.1" value="0.6" data-dec="1"></div>
+      <div class="btns"><button class="btn" id="go">Restart</button><button class="btn alt" id="pause">Pause</button></div>
+      <div class="readouts">
+        <span>Momentum at start</span><span id="r-p0">-</span>
+        <span>Momentum now</span><span id="r-p">-</span>
+        <span>Kinetic energy at start</span><span id="r-k0">-</span>
+        <span>Kinetic energy now</span><span id="r-k">-</span>
+        <span>Collisions so far</span><span id="r-n">0</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>In every collision between two objects, the total momentum of the pair stays the same, as long as no outside force acts on them. That is the <strong>law of conservation of momentum</strong>. Kinetic energy is different. In an <em>elastic</em> collision it is conserved too. In an <em>inelastic</em> collision some of it is turned into heat, sound and deformation. In a <em>perfectly inelastic</em> collision the objects move together after impact and the largest possible amount of kinetic energy is lost.</p>
+    <p>The elasticity slider (the coefficient of restitution <em>e</em>) tells you how bouncy the impact is: e = 1 is perfectly elastic, e = 0 is perfectly inelastic.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">Momentum p = m v<br>m<sub>1</sub>v<sub>1</sub> + m<sub>2</sub>v<sub>2</sub> = m<sub>1</sub>v<sub>1</sub>' + m<sub>2</sub>v<sub>2</sub>'<br>e = (v<sub>2</sub>' - v<sub>1</sub>') / (v<sub>1</sub> - v<sub>2</sub>)<br>Elastic: v<sub>1</sub>' = ((m<sub>1</sub> - m<sub>2</sub>) v<sub>1</sub> + 2 m<sub>2</sub> v<sub>2</sub>) / (m<sub>1</sub> + m<sub>2</sub>)<br>Kinetic energy K = &frac12; m v&sup2;</div>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>Use equal masses, e = 1, and an orange cart at rest. Watch the carts swap velocities.</li>
+        <li>Make the blue cart much heavier. What happens to the orange cart? Now make it much lighter.</li>
+        <li>Set e = 0. Do the carts stick together? How much kinetic energy is lost?</li>
+        <li>Turn walls off and give the carts opposite velocities for a head-on collision.</li>
+        <li>With e = 1, check that the momentum and kinetic energy readouts never change.</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Saying kinetic energy is always conserved. Only momentum is conserved in every collision.</li>
+      <li>Forgetting that velocity has a sign. Motion to the left is negative and must be included in the momentum sum.</li>
+      <li>Assuming "inelastic" means "no bounce at all". Only a perfectly inelastic collision makes the objects stick.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A 2 kg cart at 3 m/s hits a 3 kg cart at rest and they stick together. What is their final speed?</summary><p>Momentum before = 6 kg m/s. After: (2 + 3) v = 6, so v = 1.2 m/s.</p></details>
+    <details class="q"><summary>2. In that collision, how much kinetic energy is lost?</summary><p>Before: &frac12;(2)(9) = 9 J. After: &frac12;(5)(1.44) = 3.6 J. Loss = 5.4 J.</p></details>
+    <details class="q"><summary>3. Why do heavy trucks cause more damage than bicycles at the same speed?</summary><p>Their momentum and kinetic energy are far larger, so far more energy has to be absorbed in the collision.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 2.1), ctx = S.ctx;
+  var TL = 10, x1, x2, v1, v2, m1, m2, w1, w2, p0, k0, count = 0, paused = false;
+  function reset(){
+    m1 = PL.val("m1"); m2 = PL.val("m2"); v1 = PL.val("v1"); v2 = PL.val("v2");
+    w1 = 0.6+0.12*m1; w2 = 0.6+0.12*m2; x1 = 2; x2 = 7.5; count = 0;
+    p0 = m1*v1+m2*v2; k0 = 0.5*m1*v1*v1+0.5*m2*v2*v2;
+    PL.set("r-p0", p0.toFixed(2)+" kg m/s"); PL.set("r-k0", k0.toFixed(2)+" J"); PL.set("r-n", "0");
+  }
+  function step(dt){
+    x1 += v1*dt; x2 += v2*dt;
+    if (PL.$("walls").checked){
+      if (x1-w1/2 < 0 && v1 < 0){ x1 = w1/2; v1 = -v1; }
+      if (x2+w2/2 > TL && v2 > 0){ x2 = TL-w2/2; v2 = -v2; }
+    }
+    var gap = (x2-w2/2)-(x1+w1/2);
+    if (gap <= 0 && v1 > v2){
+      var e = PL.val("e"), M = m1+m2, a = v1, b = v2;
+      v1 = ((m1-e*m2)*a+(1+e)*m2*b)/M; v2 = ((m2-e*m1)*b+(1+e)*m1*a)/M;
+      var ov = -gap/2; x1 -= ov; x2 += ov; count++; PL.set("r-n", String(count));
+    }
+  }
+  function draw(){
+    ctx.clearRect(0,0,S.w,S.h); ctx.fillStyle = "#13223b"; ctx.fillRect(0,0,S.w,S.h);
+    var ax = 30, sc = (S.w-60)/TL, ty = S.h*0.6;
+    ctx.fillStyle = "#2a3d5c"; ctx.fillRect(ax, ty+2, TL*sc, 8);
+    ctx.fillStyle = "#6b7b99"; ctx.fillRect(ax-8, ty-90, 8, 100); ctx.fillRect(ax+TL*sc, ty-90, 8, 100);
+    ctx.strokeStyle = "rgba(255,255,255,.15)"; ctx.fillStyle = "#9db0d0"; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+    for (var i = 0; i <= TL; i += 2){ ctx.beginPath(); ctx.moveTo(ax+i*sc, ty+10); ctx.lineTo(ax+i*sc, ty+16); ctx.stroke(); ctx.fillText(i+" m", ax+i*sc, ty+30); }
+    function cart(x, w, m, col, v){
+      var bh = 28+m*4, px = ax+(x-w/2)*sc;
+      ctx.fillStyle = col; ctx.fillRect(px, ty-bh, w*sc, bh); ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 1.5; ctx.strokeRect(px, ty-bh, w*sc, bh);
+      ctx.fillStyle = "#fff"; ctx.font = "bold 12px sans-serif"; ctx.fillText(m+" kg", ax+x*sc, ty-bh/2+4);
+      ctx.fillStyle = "#222"; ctx.beginPath(); ctx.arc(px+10, ty+1, 5, 0, 7); ctx.arc(px+w*sc-10, ty+1, 5, 0, 7); ctx.fill();
+      if (Math.abs(v) > 0.05){ PL.arrow(ctx, ax+x*sc, ty-bh-14, ax+x*sc+v*22, ty-bh-14, col, 3); ctx.fillStyle = col; ctx.font = "12px sans-serif"; ctx.fillText(v.toFixed(2)+" m/s", ax+x*sc+v*11, ty-bh-22); }
+    }
+    cart(x1, w1, m1, "#2f6fed", v1); cart(x2, w2, m2, "#e68a00", v2);
+    var p = m1*v1+m2*v2, k = 0.5*m1*v1*v1+0.5*m2*v2*v2;
+    PL.set("r-p", p.toFixed(2)+" kg m/s"); PL.set("r-k", k.toFixed(2)+" J");
+  }
+  ["m1","m2","v1","v2"].forEach(function(id){ PL.$(id).addEventListener("input", reset); });
+  PL.$("go").onclick = reset;
+  PL.$("pause").onclick = function(){ paused = !paused; this.textContent = paused ? "Resume" : "Pause"; };
+  reset();
+  PL.loop(function(dt){
+    if (!paused){ var T = dt*PL.val("ts")*2, n = Math.ceil(T/0.002), d = T/n; for (var i = 0; i < n; i++) step(d); }
+    draw();
+  });
+})();
+</script>
+</body>
+</html>

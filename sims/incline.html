@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inclined Plane and Friction Simulation</title>
+<meta name="description" content="Free inclined plane simulation. Tilt the ramp, set static and kinetic friction, add a push, and see forces, acceleration and when a block slips.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="incline">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Inclined Plane and Friction</h1>
+  <p class="lead">Tilt the ramp and set the friction. The simulation draws every force on the block and tells you whether it stays still, slides down or is pushed up.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Inclined plane simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="ang">Ramp angle <output id="ang-o"></output></label><input type="range" id="ang" min="0" max="60" step="1" value="25" data-unit="deg"></div>
+      <div class="ctl"><label for="m">Mass <output id="m-o"></output></label><input type="range" id="m" min="1" max="20" step="1" value="5" data-unit="kg"></div>
+      <div class="ctl"><label for="mus">Static friction &mu;s <output id="mus-o"></output></label><input type="range" id="mus" min="0" max="1" step="0.01" value="0.5" data-dec="2"></div>
+      <div class="ctl"><label for="muk">Kinetic friction &mu;k <output id="muk-o"></output></label><input type="range" id="muk" min="0" max="1" step="0.01" value="0.3" data-dec="2"></div>
+      <div class="ctl"><label for="fa">Applied push (up the slope) <output id="fa-o"></output></label><input type="range" id="fa" min="-60" max="120" step="1" value="0" data-unit="N"></div>
+      <div class="btns"><button class="btn alt" id="reset">Reset block</button></div>
+      <div class="readouts">
+        <span>Weight mg</span><span id="r-w">-</span>
+        <span>Normal force N</span><span id="r-n">-</span>
+        <span>Weight along slope</span><span id="r-p">-</span>
+        <span>Friction force</span><span id="r-f">-</span>
+        <span>Acceleration</span><span id="r-a">-</span>
+        <span>Status</span><span id="r-s">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>On a ramp, gravity pulls the block straight down. It is easiest to understand if you split the weight into two parts: one <strong>along the slope</strong>, which tries to make the block slide, and one <strong>perpendicular to the slope</strong>, which presses the block into the surface. The surface pushes back with the <strong>normal force</strong>, and friction acts along the surface, opposing any sliding.</p>
+    <p>Friction has two modes. While the block is at rest, <em>static friction</em> adjusts itself to match the push along the slope, up to a maximum of &mu;<sub>s</sub>N. Once the block slips, <em>kinetic friction</em> takes over with a fixed size &mu;<sub>k</sub>N, which is usually a little smaller.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">Weight along slope = m g sin&theta;<br>Normal force N = m g cos&theta;<br>Static friction limit = &mu;<sub>s</sub> N<br>Kinetic friction = &mu;<sub>k</sub> N<br>Sliding down: a = g (sin&theta; - &mu;<sub>k</sub> cos&theta;)<br>Block starts to slip when tan&theta; &gt; &mu;<sub>s</sub></div>
+    <p>Notice that the mass cancels in the acceleration formula. A heavy and a light block with the same surface slide down a ramp identically.</p>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>Set the push to 0 and slowly raise the ramp angle. At which angle does the block start to slide? Compare it with the angle whose tangent equals &mu;<sub>s</sub>.</li>
+        <li>Change the mass while the block is sliding. Does the acceleration change?</li>
+        <li>Set &mu;s = &mu;k = 0 for a frictionless ramp. What acceleration do you get at 30&deg;?</li>
+        <li>Find the push that holds the block still at 40&deg; with low friction.</li>
+        <li>At 0&deg;, how big a push is needed to start the block moving?</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Writing N = mg. The normal force equals mg cos&theta; on a slope, not mg.</li>
+      <li>Using &mu;N for friction when the block is at rest. Static friction can be anything from zero up to &mu;<sub>s</sub>N.</li>
+      <li>Mixing up sine and cosine. The component along the slope uses sin&theta;, the perpendicular one uses cos&theta;.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A block sits on a ramp with &mu;s = 0.6. What is the steepest angle at which it stays at rest?</summary><p>&theta; = tan<sup>-1</sup>(0.6) &asymp; 31&deg;.</p></details>
+    <details class="q"><summary>2. What is the acceleration of a block on a frictionless 30&deg; ramp?</summary><p>a = g sin 30&deg; = 9.81 &times; 0.5 &asymp; 4.9 m/s&sup2; down the slope.</p></details>
+    <details class="q"><summary>3. Why is it harder to start a heavy box moving than to keep it moving?</summary><p>Because the maximum static friction (&mu;<sub>s</sub>N) is generally larger than kinetic friction (&mu;<sub>k</sub>N).</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.6), ctx = S.ctx;
+  var LS = 6, s = 3, v = 0, GG = 9.81;
+  function reset(){ s = 3; v = 0; }
+  function params(){
+    var th = PL.val("ang")*Math.PI/180, m = PL.val("m"), mus = PL.val("mus"), muk = Math.min(PL.val("muk"), mus), fa = PL.val("fa");
+    var N = m*GG*Math.cos(th), p = m*GG*Math.sin(th);
+    return { th:th, m:m, mus:mus, muk:muk, fa:fa, N:N, p:p, net:fa-p };
+  }
+  var state = { f:0, a:0, status:"" };
+  function step(dt){
+    var P = params();
+    var dir = v !== 0 ? Math.sign(v) : 0;
+    if (v === 0){
+      if (Math.abs(P.net) <= P.mus*P.N){ state.f = -P.net; state.a = 0; state.status = "At rest"; return; }
+      dir = Math.sign(P.net);
+    }
+    var fr = -dir*P.muk*P.N, a = (P.net+fr)/P.m;
+    var vn = v + a*dt;
+    if (v !== 0 && Math.sign(vn) !== Math.sign(v)){ v = 0; state.f = fr; state.a = 0; state.status = "At rest"; return; }
+    v = vn; s += v*dt; state.f = fr; state.a = a;
+    state.status = v > 0 ? "Sliding up" : "Sliding down";
+    if (s <= 0){ s = 0; v = 0; state.a = 0; state.status = "Reached bottom"; }
+    if (s >= LS){ s = LS; v = 0; state.a = 0; state.status = "Reached top"; }
+  }
+  function draw(){
+    var P = params(), th = P.th;
+    ctx.clearRect(0,0,S.w,S.h);
+    var sky = ctx.createLinearGradient(0,0,0,S.h); sky.addColorStop(0,"#13223b"); sky.addColorStop(1,"#1b3050"); ctx.fillStyle = sky; ctx.fillRect(0,0,S.w,S.h);
+    var yb = S.h-36, ax = 40;
+    var Lpx = Math.min((S.w-ax-60)/Math.max(Math.cos(th),0.25), (yb-60)/Math.max(Math.sin(th),0.08), S.w*0.85);
+    var bx = ax+Lpx*Math.cos(th), cy = yb-Lpx*Math.sin(th);
+    ctx.fillStyle = "#24543a"; ctx.fillRect(0,yb,S.w,S.h-yb);
+    ctx.fillStyle = "#34486b"; ctx.beginPath(); ctx.moveTo(ax,yb); ctx.lineTo(bx,yb); ctx.lineTo(bx,cy); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "#9db0d0"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ax,yb); ctx.lineTo(bx,cy); ctx.stroke();
+    // angle arc + label
+    ctx.strokeStyle = "#f0a202"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(ax,yb,64,-th,0); ctx.stroke();
+    ctx.fillStyle = "#f0a202"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "left"; ctx.fillText(PL.val("ang")+"°", ax+72, yb-6);
+    // block
+    var frac = s/LS, px = ax+Lpx*Math.cos(th)*frac, py = yb-Lpx*Math.sin(th)*frac, bw = 54, bh = 36;
+    ctx.save(); ctx.translate(px,py); ctx.rotate(-th);
+    ctx.fillStyle = "#f0a202"; ctx.fillRect(-bw/2,-bh,bw,bh); ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 1.5; ctx.strokeRect(-bw/2,-bh,bw,bh);
+    ctx.fillStyle = "#13223b"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center"; ctx.fillText(P.m+" kg", 0, -bh/2+4); ctx.restore();
+    // forces from block centre
+    var cx = px - Math.sin(th)*bh/2, cyy = py - Math.cos(th)*bh/2;
+    var u = [Math.cos(th), -Math.sin(th)], n = [-Math.sin(th), -Math.cos(th)];
+    var k = 70/(P.m*GG);
+    function F(vx,vy,col,label){ var ex = cx+vx*k, ey = cyy+vy*k; PL.arrow(ctx,cx,cyy,ex,ey,col,3); ctx.fillStyle = col; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center"; ctx.fillText(label, ex+(vx>=0?14:-14), ey+(vy>=0?14:-4)); }
+    F(0, P.m*GG, "#d1495b", "mg");
+    F(n[0]*P.N, n[1]*P.N, "#2f6fed", "N");
+    if (Math.abs(state.f) > 0.05) F(u[0]*state.f, u[1]*state.f, "#7bd389", "f");
+    if (Math.abs(P.fa) > 0.05) F(u[0]*P.fa, u[1]*P.fa, "#b980f0", "push");
+    // readouts
+    PL.set("r-w", (P.m*GG).toFixed(1)+" N"); PL.set("r-n", P.N.toFixed(1)+" N"); PL.set("r-p", P.p.toFixed(1)+" N");
+    PL.set("r-f", Math.abs(state.f).toFixed(1)+" N "+(state.f>0.05?"(up)":state.f<-0.05?"(down)":""));
+    PL.set("r-a", state.a.toFixed(2)+" m/s²"); PL.set("r-s", state.status);
+  }
+  PL.$("reset").onclick = reset;
+  PL.loop(function(dt){ var n = Math.ceil(dt/0.004), d = dt/n; for (var i = 0; i < n; i++) step(d); draw(); });
+})();
+</script>
+</body>
+</html>

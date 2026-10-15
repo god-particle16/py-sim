@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pendulum Lab Simulation</title>
+<meta name="description" content="Free pendulum simulation. Drag the bob, change length, gravity and damping, and measure the period against the theoretical value.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="pendulum">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Pendulum Lab</h1>
+  <p class="lead">Drag the bob to any angle and let go. A live graph records the angle over time while the lab measures the period for you.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Pendulum simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="len">String length <output id="len-o"></output></label><input type="range" id="len" min="0.3" max="3" step="0.1" value="1.5" data-unit="m" data-dec="1"></div>
+      <div class="ctl"><label for="ang">Starting angle <output id="ang-o"></output></label><input type="range" id="ang" min="5" max="170" step="1" value="30" data-unit="deg"></div>
+      <div class="ctl"><label for="damp">Damping <output id="damp-o"></output></label><input type="range" id="damp" min="0" max="1" step="0.01" value="0.05" data-dec="2"></div>
+      <div class="ctl"><label for="grav">World</label>
+        <select id="grav"><option value="9.81">Earth (9.81 m/s&sup2;)</option><option value="1.62">Moon (1.62 m/s&sup2;)</option><option value="3.71">Mars (3.71 m/s&sup2;)</option><option value="24.79">Jupiter (24.79 m/s&sup2;)</option></select></div>
+      <div class="btns"><button class="btn" id="go">Pause</button><button class="btn alt" id="reset">Reset</button></div>
+      <div class="readouts">
+        <span>Small-angle period</span><span id="r-t0">-</span>
+        <span>Measured period</span><span id="r-t">-</span>
+        <span>Angle now</span><span id="r-a">-</span>
+        <span>Max speed of bob</span><span id="r-v">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>A simple pendulum is a small mass hanging from a light string. When you pull it aside, gravity gives it a restoring force that always points back towards the lowest point. The bob speeds up as it falls, overshoots the bottom, slows down on the other side and repeats. The time for one full back-and-forth swing is the <strong>period</strong>.</p>
+    <p>Galileo noticed that a swinging chandelier took the same time for big and small swings. This is almost true for small angles, and this simulation lets you find out exactly how far the idea works.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">T = 2&pi; &radic;(L / g)  (small angles, less than about 15&deg;)<br>f = 1 / T<br>&theta;'' = -(g / L) sin &theta;  (full equation of motion)</div>
+    <p>The mass of the bob does not appear in the formula. Gravity pulls harder on a heavy bob, but a heavy bob also has more inertia, and the two effects cancel.</p>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>Set the angle to 10&deg; and damping to 0. Compare the measured and small-angle periods.</li>
+        <li>Increase the angle to 90&deg; and then 150&deg;. What happens to the measured period?</li>
+        <li>Quadruple the length from 0.5 m to 2.0 m. By what factor does the period change?</li>
+        <li>Move the pendulum to the Moon. How does the period compare with Earth?</li>
+        <li>Increase damping and watch how the graph envelope shrinks.</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Using the formula T = 2&pi;&radic;(L/g) for large swings. It is only accurate for small angles; the real period grows with amplitude.</li>
+      <li>Measuring the length to the top of the bob. It should be measured to the centre of the bob.</li>
+      <li>Thinking a heavier bob swings faster. Mass cancels out.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. What is the period of a 1.0 m pendulum on Earth?</summary><p>T = 2&pi;&radic;(1/9.81) &asymp; 2.0 s.</p></details>
+    <details class="q"><summary>2. To double the period, what must you do to the length?</summary><p>Quadruple it. T is proportional to &radic;L, so doubling T needs four times the length.</p></details>
+    <details class="q"><summary>3. Where is the bob moving fastest, and why?</summary><p>At the lowest point, where all the gravitational potential energy has turned into kinetic energy.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.6), ctx = S.ctx;
+  var th, om, t = 0, running = true, dragging = false, lastCross = null, period = null, hist = [], vmax = 0;
+  function g(){ return parseFloat(PL.$("grav").value); }
+  function L(){ return PL.val("len"); }
+  function reset(){
+    th = PL.val("ang")*Math.PI/180; om = 0; t = 0; hist = []; lastCross = null; period = null; vmax = 0;
+    PL.set("r-t","-");
+  }
+  function acc(a, w){ return -(g()/L())*Math.sin(a) - PL.val("damp")*w; }
+  function rk4(dt){
+    var k1a = om, k1w = acc(th, om);
+    var k2a = om+0.5*dt*k1w, k2w = acc(th+0.5*dt*k1a, om+0.5*dt*k1w);
+    var k3a = om+0.5*dt*k2w, k3w = acc(th+0.5*dt*k2a, om+0.5*dt*k2w);
+    var k4a = om+dt*k3w, k4w = acc(th+dt*k3a, om+dt*k3w);
+    var prev = th;
+    th += dt/6*(k1a+2*k2a+2*k3a+k4a); om += dt/6*(k1w+2*k2w+2*k3w+k4w); t += dt;
+    if (prev < 0 && th >= 0){
+      var tc = t - dt*th/(th-prev);
+      if (lastCross !== null){ period = tc-lastCross; PL.set("r-t", period.toFixed(3)+" s"); }
+      lastCross = tc;
+    }
+  }
+  function geo(){
+    var pendH = S.h*0.6, s = (pendH-50)/3.1;
+    var px = S.w/2, py = 28, len = L()*s;
+    return { s:s, px:px, py:py, len:len, bx:px+len*Math.sin(th), by:py+len*Math.cos(th) };
+  }
+  function draw(){
+    var G = geo();
+    ctx.clearRect(0,0,S.w,S.h); ctx.fillStyle = "#13223b"; ctx.fillRect(0,0,S.w,S.h);
+    // guide arc
+    ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.setLineDash([3,5]); ctx.beginPath(); ctx.arc(G.px,G.py,G.len,0.0,Math.PI); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = "rgba(255,255,255,.15)"; ctx.beginPath(); ctx.moveTo(G.px,G.py); ctx.lineTo(G.px,G.py+G.len+20); ctx.stroke();
+    // support
+    ctx.fillStyle = "#6b7b99"; ctx.fillRect(G.px-50, G.py-10, 100, 8);
+    // string and bob
+    ctx.strokeStyle = "#cfe3ff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(G.px,G.py); ctx.lineTo(G.bx,G.by); ctx.stroke();
+    ctx.fillStyle = dragging ? "#ffd166" : "#f0a202"; ctx.beginPath(); ctx.arc(G.bx,G.by,16,0,7); ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,.3)"; ctx.lineWidth = 1.5; ctx.stroke();
+    // angle arc
+    ctx.strokeStyle = "#14a39b"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(G.px,G.py,34,Math.PI/2-th>Math.PI/2?Math.PI/2:Math.PI/2-th, Math.PI/2, th<0); ctx.stroke();
+    // graph
+    var gx = 54, gy = S.h*0.66, gw = S.w-gx-16, gh = S.h-gy-26;
+    ctx.fillStyle = "rgba(255,255,255,.04)"; ctx.fillRect(gx,gy,gw,gh);
+    ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(gx,gy+gh/2); ctx.lineTo(gx+gw,gy+gh/2); ctx.stroke();
+    ctx.fillStyle = "#9db0d0"; ctx.font = "11px sans-serif"; ctx.textAlign = "right";
+    ctx.fillText("+"+Math.round(PL.val("ang"))+"°", gx-6, gy+10); ctx.fillText("0", gx-6, gy+gh/2+4); ctx.fillText("-"+Math.round(PL.val("ang"))+"°", gx-6, gy+gh-2);
+    ctx.textAlign = "center"; ctx.fillText("angle vs time (last 10 s)", gx+gw/2, S.h-8);
+    var amp = PL.val("ang")*Math.PI/180, t1 = t, t0 = t1-10;
+    ctx.strokeStyle = "#14a39b"; ctx.lineWidth = 2; ctx.beginPath(); var first = true;
+    for (var i = 0; i < hist.length; i++){
+      var h = hist[i]; if (h[0] < t0) continue;
+      var X = gx + (h[0]-Math.max(0,t0))/(10)*gw*(t1<10 ? 1 : 1);
+      X = gx + (h[0]-t0)/10*gw; if (t1 < 10) X = gx + h[0]/10*gw;
+      var Y = gy+gh/2 - h[1]/amp*(gh/2-4);
+      if (first){ ctx.moveTo(X,Y); first = false; } else ctx.lineTo(X,Y);
+    }
+    ctx.stroke();
+    PL.set("r-t0", (2*Math.PI*Math.sqrt(L()/g())).toFixed(3)+" s");
+    PL.set("r-a", (th*180/Math.PI).toFixed(1)+"°");
+    PL.set("r-v", vmax.toFixed(2)+" m/s");
+  }
+  // dragging
+  var cv = S.c;
+  cv.addEventListener("pointerdown", function(e){
+    var p = S.pos(e), G = geo();
+    if (Math.hypot(p.x-G.bx, p.y-G.by) < 34){ dragging = true; cv.setPointerCapture(e.pointerId); }
+  });
+  cv.addEventListener("pointermove", function(e){
+    if (!dragging) return; var p = S.pos(e), G = geo();
+    th = Math.atan2(p.x-G.px, p.y-G.py); om = 0; PL.$("ang").value = Math.round(Math.abs(th)*180/Math.PI); PL.$("ang").dispatchEvent(new Event("input"));
+    hist = []; t = 0; lastCross = null; period = null; vmax = 0; PL.set("r-t","-");
+  });
+  cv.addEventListener("pointerup", function(){ dragging = false; });
+  PL.$("go").onclick = function(){ running = !running; this.textContent = running ? "Pause" : "Resume"; };
+  PL.$("reset").onclick = reset;
+  PL.$("ang").addEventListener("change", reset);
+  PL.$("len").addEventListener("change", reset);
+  reset();
+  PL.loop(function(dt){
+    if (running && !dragging){
+      var n = Math.ceil(dt/0.002), d = dt/n;
+      for (var i = 0; i < n; i++) rk4(d);
+      var v = Math.abs(om)*L(); if (v > vmax) vmax = v;
+      hist.push([t, th]); if (hist.length > 1500) hist.shift();
+    }
+    draw();
+  });
+})();
+</script>
+</body>
+</html>

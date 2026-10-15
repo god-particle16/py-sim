@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Projectile Motion Simulation</title>
+<meta name="description" content="Free projectile motion simulation. Change launch angle, speed, height, gravity and air resistance, then measure range, maximum height and flight time.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="projectile">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Projectile Motion</h1>
+  <p class="lead">Fire a cannonball and see how angle, speed, launch height, gravity and air drag shape its path. Fire several shots to compare them.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Projectile motion simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="ang">Launch angle <output id="ang-o"></output></label><input type="range" id="ang" min="5" max="85" step="1" value="45" data-unit="deg"></div>
+      <div class="ctl"><label for="spd">Launch speed <output id="spd-o"></output></label><input type="range" id="spd" min="5" max="60" step="1" value="25" data-unit="m/s"></div>
+      <div class="ctl"><label for="h0">Launch height <output id="h0-o"></output></label><input type="range" id="h0" min="0" max="30" step="1" value="0" data-unit="m"></div>
+      <div class="ctl"><label for="grav">World</label>
+        <select id="grav"><option value="9.81">Earth (9.81 m/s&sup2;)</option><option value="1.62">Moon (1.62 m/s&sup2;)</option><option value="3.71">Mars (3.71 m/s&sup2;)</option><option value="24.79">Jupiter (24.79 m/s&sup2;)</option></select></div>
+      <label class="check"><input type="checkbox" id="drag"> Air resistance</label>
+      <div class="btns"><button class="btn" id="fire">Fire</button><button class="btn alt" id="clear">Clear</button></div>
+      <div class="readouts">
+        <span>Range</span><span id="r-range">-</span>
+        <span>Max height</span><span id="r-h">-</span>
+        <span>Flight time</span><span id="r-t">-</span>
+        <span>Impact speed</span><span id="r-v">-</span>
+        <span>Range without drag</span><span id="r-th">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>A projectile is any object that moves through the air under gravity alone. Once it leaves the launcher, the only force acting on it (ignoring air) is its weight, which pulls straight down. That is why the horizontal motion and the vertical motion can be studied separately. Horizontally the speed stays constant, because nothing pushes or pulls sideways. Vertically the object accelerates downwards at <em>g</em>. Put the two together and the path is a parabola.</p>
+    <h2>Key formulas</h2>
+    <p>With launch speed <em>v</em>, angle &theta; above the horizontal and launch height <em>h</em>:</p>
+    <div class="formula">v<sub>x</sub> = v cos&theta; (constant)<br>v<sub>y</sub> = v sin&theta; - g t<br>x = v cos&theta; &middot; t<br>y = h + v sin&theta; &middot; t - &frac12; g t&sup2;</div>
+    <p>On level ground (h = 0) the range, maximum height and time of flight are:</p>
+    <div class="formula">R = v&sup2; sin 2&theta; / g<br>H = v&sup2; sin&sup2;&theta; / (2g)<br>T = 2 v sin&theta; / g</div>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>Set launch height to 0 and air resistance off. Which angle gives the longest range? Try 30&deg;, 45&deg; and 60&deg;.</li>
+        <li>Compare 30&deg; and 60&deg;. Why do they land at the same spot?</li>
+        <li>Switch to the Moon. How much further does the same shot travel?</li>
+        <li>Turn on air resistance. Does 45&deg; still give the best range?</li>
+        <li>Raise the launch height to 20 m. Does the best angle go above or below 45&deg;?</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Thinking the object has no acceleration at the top of its path. Vertical velocity is zero there, but gravity still acts.</li>
+      <li>Believing a heavier object falls faster. Without air resistance, mass does not affect the motion at all.</li>
+      <li>Mixing up the horizontal and vertical components. Always split the launch velocity first.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A ball is launched at 20 m/s at 30&deg; on level ground on Earth. What is the maximum height?</summary><p>H = v&sup2; sin&sup2;&theta; / 2g = 400 &times; 0.25 / 19.62 &asymp; 5.1 m.</p></details>
+    <details class="q"><summary>2. Why is the range the same for angles that add up to 90&deg;?</summary><p>Because R depends on sin 2&theta;, and sin 2&theta; has the same value for &theta; and 90&deg; - &theta;. The 60&deg; shot is higher and slower horizontally, the 30&deg; shot is flatter and faster horizontally, and the two effects cancel exactly.</p></details>
+    <details class="q"><summary>3. What happens to the best launch angle when air resistance is added?</summary><p>It becomes smaller than 45&deg;. Drag costs more energy on a long, high path, so a flatter shot does better.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.6), ctx = S.ctx;
+  var shots = [], COLORS = ["#14a39b","#f0a202","#d1495b","#2f6fed","#b980f0","#7bd389"];
+  var CD = 0.006, cnt = 0;
+
+  function g(){ return parseFloat(PL.$("grav").value); }
+  function view(){
+    var v = PL.val("spd"), G = g(), h = PL.val("h0");
+    var R = v*Math.sqrt(v*v+2*G*h)/G, H = h + v*v/(2*G);
+    var s = Math.min((S.w-70)/(R*1.08), (S.h-60)/(H*1.1));
+    return { s:s, ox:40, oy:S.h-30 };
+  }
+  function theory(){
+    var v = PL.val("spd"), a = PL.val("ang")*Math.PI/180, h = PL.val("h0"), G = g();
+    return v*Math.cos(a)/G*(v*Math.sin(a)+Math.sqrt(v*v*Math.sin(a)*Math.sin(a)+2*G*h));
+  }
+  function fire(){
+    var a = PL.val("ang")*Math.PI/180, v = PL.val("spd");
+    var sh = { x:0, y:PL.val("h0"), vx:v*Math.cos(a), vy:v*Math.sin(a), t:0, pts:[[0,PL.val("h0")]],
+      hmax:PL.val("h0"), done:false, color:COLORS[cnt++%COLORS.length], G:g(), drag:PL.$("drag").checked, acc:0 };
+    shots.push(sh); if (shots.length > 8) shots.shift();
+  }
+  function step(sh, dt){
+    var ax = 0, ay = -sh.G;
+    if (sh.drag){ var sp = Math.hypot(sh.vx, sh.vy); ax -= CD*sp*sh.vx; ay -= CD*sp*sh.vy; }
+    sh.vx += ax*dt; sh.vy += ay*dt;
+    var nx = sh.x + sh.vx*dt, ny = sh.y + sh.vy*dt;
+    if (ny <= 0){
+      var f = sh.y/(sh.y-ny); nx = sh.x + (nx-sh.x)*f; ny = 0; sh.t += dt*f; sh.x = nx; sh.y = 0; sh.done = true;
+      sh.pts.push([sh.x, 0]);
+      PL.set("r-range", sh.x.toFixed(1)+" m"); PL.set("r-h", sh.hmax.toFixed(1)+" m");
+      PL.set("r-t", sh.t.toFixed(2)+" s"); PL.set("r-v", Math.hypot(sh.vx,sh.vy).toFixed(1)+" m/s");
+      return;
+    }
+    sh.x = nx; sh.y = ny; sh.t += dt; if (ny > sh.hmax) sh.hmax = ny;
+    sh.acc += dt; if (sh.acc > 0.02){ sh.acc = 0; sh.pts.push([sh.x, sh.y]); }
+  }
+  function niceStep(span){ var raw = span/6, p = Math.pow(10, Math.floor(Math.log10(raw))), n = raw/p; return (n<1.5?1:n<3.5?2:n<7.5?5:10)*p; }
+
+  function draw(){
+    var V = view();
+    ctx.clearRect(0,0,S.w,S.h);
+    var sky = ctx.createLinearGradient(0,0,0,S.h); sky.addColorStop(0,"#13223b"); sky.addColorStop(1,"#1d3556");
+    ctx.fillStyle = sky; ctx.fillRect(0,0,S.w,S.h);
+    ctx.fillStyle = "#24543a"; ctx.fillRect(0, V.oy, S.w, S.h-V.oy);
+    // grid / ticks
+    var st = niceStep((S.w-70)/V.s);
+    ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#9db0d0"; ctx.strokeStyle = "rgba(255,255,255,.07)"; ctx.lineWidth = 1;
+    for (var x = 0; V.ox + x*V.s < S.w; x += st){
+      var px = V.ox + x*V.s; ctx.beginPath(); ctx.moveTo(px,V.oy); ctx.lineTo(px,10); ctx.stroke();
+      ctx.fillText(Math.round(x*10)/10+" m", px, V.oy+16);
+    }
+    ctx.textAlign = "right";
+    for (var y = st; V.oy - y*V.s > 10; y += st){
+      var py = V.oy - y*V.s; ctx.beginPath(); ctx.moveTo(V.ox,py); ctx.lineTo(S.w,py); ctx.stroke();
+      ctx.fillText(Math.round(y*10)/10, V.ox-6, py+4);
+    }
+    // preview (vacuum) path
+    var a = PL.val("ang")*Math.PI/180, v = PL.val("spd"), h = PL.val("h0"), G = g();
+    ctx.setLineDash([4,6]); ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 1.5; ctx.beginPath();
+    var T = (v*Math.sin(a)+Math.sqrt(v*v*Math.sin(a)*Math.sin(a)+2*G*h))/G;
+    for (var i = 0; i <= 60; i++){ var t = T*i/60, xx = v*Math.cos(a)*t, yy = h+v*Math.sin(a)*t-0.5*G*t*t;
+      var X = V.ox+xx*V.s, Y = V.oy-yy*V.s; if (i) ctx.lineTo(X,Y); else ctx.moveTo(X,Y); }
+    ctx.stroke(); ctx.setLineDash([]);
+    // platform + cannon
+    var cy = V.oy - h*V.s;
+    if (h > 0){ ctx.fillStyle = "#5a4a3a"; ctx.fillRect(V.ox-14, cy+8, 20, V.oy-cy-8); }
+    ctx.save(); ctx.translate(V.ox, cy); ctx.rotate(-a);
+    ctx.fillStyle = "#8a97b0"; ctx.fillRect(0,-6,34,12); ctx.restore();
+    ctx.fillStyle = "#56627a"; ctx.beginPath(); ctx.arc(V.ox, cy, 11, 0, 7); ctx.fill();
+    // shots
+    shots.forEach(function(sh, idx){
+      ctx.strokeStyle = sh.color; ctx.lineWidth = 2.2; ctx.beginPath();
+      sh.pts.forEach(function(p,i){ var X=V.ox+p[0]*V.s, Y=V.oy-p[1]*V.s; if(i) ctx.lineTo(X,Y); else ctx.moveTo(X,Y); });
+      ctx.stroke();
+      var X = V.ox+sh.x*V.s, Y = V.oy-sh.y*V.s;
+      ctx.fillStyle = sh.color; ctx.beginPath(); ctx.arc(X, Y, sh.done?4:7, 0, 7); ctx.fill();
+    });
+    PL.set("r-th", theory().toFixed(1)+" m");
+  }
+
+  PL.$("fire").onclick = fire;
+  PL.$("clear").onclick = function(){ shots = []; ["r-range","r-h","r-t","r-v"].forEach(function(i){ PL.set(i,"-"); }); };
+  PL.loop(function(dt){
+    var n = Math.ceil(dt/(1/300)), d = dt/n;
+    shots.forEach(function(sh){ if (!sh.done) for (var i=0;i<n && !sh.done;i++) step(sh, d); });
+    draw();
+  });
+})();
+</script>
+</body>
+</html>

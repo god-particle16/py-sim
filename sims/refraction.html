@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Refraction and Snell's Law Simulation</title>
+<meta name="description" content="Free refraction simulation. Bend a light ray between two materials, test Snell's law, find the critical angle and see total internal reflection.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="refraction">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">Refraction and Snell's Law</h1>
+  <p class="lead">Shine a light ray from one material into another. Drag the laser or use the slider, and watch how the ray bends, how much light reflects and when it is trapped by total internal reflection.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Refraction simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="n1">Top material index n1 <output id="n1-o"></output></label><input type="range" id="n1" min="1" max="2.5" step="0.01" value="1" data-dec="2"></div>
+      <div class="ctl"><label for="n2">Bottom material index n2 <output id="n2-o"></output></label><input type="range" id="n2" min="1" max="2.5" step="0.01" value="1.5" data-dec="2"></div>
+      <div class="ctl"><label for="a1">Angle of incidence <output id="a1-o"></output></label><input type="range" id="a1" min="0" max="89" step="1" value="40" data-unit="deg"></div>
+      <div class="btns">
+        <button class="btn alt" data-p="1,1.33">Air &rarr; Water</button>
+        <button class="btn alt" data-p="1.33,1">Water &rarr; Air</button>
+        <button class="btn alt" data-p="1.52,1">Glass &rarr; Air</button>
+        <button class="btn alt" data-p="1,2.42">Air &rarr; Diamond</button>
+      </div>
+      <div class="readouts">
+        <span>Angle of refraction</span><span id="r-a2">-</span>
+        <span>n1 sin &theta;1</span><span id="r-s1">-</span>
+        <span>n2 sin &theta;2</span><span id="r-s2">-</span>
+        <span>Critical angle</span><span id="r-c">-</span>
+        <span>Light speed in top</span><span id="r-v1">-</span>
+        <span>Light speed in bottom</span><span id="r-v2">-</span>
+        <span>Light reflected</span><span id="r-R">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>Light travels at its top speed in a vacuum. In any material it slows down, and the ratio of the two speeds is the material's <strong>refractive index</strong> <em>n</em> (n = c / v). When a ray crosses the boundary at an angle, one side of the beam slows down before the other, and the beam bends, like a car whose wheels hit mud on one side first. A ray entering a slower (higher n) material bends <em>towards</em> the normal. A ray entering a faster material bends <em>away</em> from it.</p>
+    <p>If light is moving from a higher-index material into a lower one and the angle is large enough, there is no refracted ray at all. Everything reflects. This is <strong>total internal reflection</strong>, and it is what keeps light inside optical fibres and makes diamonds sparkle.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">n = c / v<br>Snell's law: n<sub>1</sub> sin&theta;<sub>1</sub> = n<sub>2</sub> sin&theta;<sub>2</sub><br>Critical angle (n<sub>1</sub> &gt; n<sub>2</sub>): sin&theta;<sub>c</sub> = n<sub>2</sub> / n<sub>1</sub><br>Law of reflection: angle of reflection = angle of incidence</div>
+    <p>All angles are measured from the <em>normal</em>, the dashed line perpendicular to the surface, not from the surface itself.</p>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>Press Air &rarr; Water and raise the angle. Does the refracted ray ever reach the surface?</li>
+        <li>Press Water &rarr; Air. Increase the angle until the refracted ray vanishes. Compare this angle with the critical angle readout.</li>
+        <li>Check that n1 sin&theta;1 and n2 sin&theta;2 are always equal when refraction occurs.</li>
+        <li>Try Glass &rarr; Air at 45&deg;. Is the light totally reflected?</li>
+        <li>Set n1 = n2. What happens to the ray? Why?</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Measuring angles from the surface instead of from the normal.</li>
+      <li>Thinking light always bends towards the normal. It depends on which material has the higher index.</li>
+      <li>Expecting total internal reflection when going from air into glass. It needs light to start in the denser material.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. Light goes from air (n = 1) into glass (n = 1.5) at 30&deg;. What is the refraction angle?</summary><p>sin&theta;<sub>2</sub> = (1 &times; 0.5)/1.5 = 0.333, so &theta;<sub>2</sub> &asymp; 19.5&deg;.</p></details>
+    <details class="q"><summary>2. What is the critical angle for water (1.33) to air?</summary><p>sin&theta;<sub>c</sub> = 1/1.33 = 0.752, so &theta;<sub>c</sub> &asymp; 48.8&deg;.</p></details>
+    <details class="q"><summary>3. Why does a straw in a glass of water look bent?</summary><p>Light from the part under water refracts as it leaves the water, so your eye traces it back to a different position than the real one.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.6), ctx = S.ctx, deg = Math.PI/180;
+  var dragging = false;
+  function O(){ return { x:S.w/2, y:S.h/2 }; }
+  function calc(){
+    var n1 = PL.val("n1"), n2 = PL.val("n2"), a1 = PL.val("a1")*deg;
+    var s2 = n1*Math.sin(a1)/n2, tir = s2 > 1, a2 = tir ? null : Math.asin(s2), R;
+    if (tir) R = 1;
+    else {
+      var c1 = Math.cos(a1), c2 = Math.cos(a2);
+      var rs = (n1*c1-n2*c2)/(n1*c1+n2*c2), rp = (n2*c1-n1*c2)/(n2*c1+n1*c2);
+      R = (rs*rs+rp*rp)/2;
+    }
+    return { n1:n1, n2:n2, a1:a1, a2:a2, tir:tir, R:R };
+  }
+  function draw(){
+    var C = calc(), o = O(), L = Math.min(S.w,S.h)*0.45;
+    ctx.clearRect(0,0,S.w,S.h);
+    ctx.fillStyle = "#0f1b2d"; ctx.fillRect(0,0,S.w,S.h);
+    ctx.fillStyle = "rgba(110,170,255,"+(0.04+(C.n1-1)*0.22)+")"; ctx.fillRect(0,0,S.w,o.y);
+    ctx.fillStyle = "rgba(110,170,255,"+(0.04+(C.n2-1)*0.22)+")"; ctx.fillRect(0,o.y,S.w,S.h-o.y);
+    ctx.fillStyle = "#cfe3ff"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "left";
+    ctx.fillText("n1 = "+C.n1.toFixed(2), 14, 22); ctx.fillText("n2 = "+C.n2.toFixed(2), 14, S.h-14);
+    ctx.strokeStyle = "#cfe3ff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0,o.y); ctx.lineTo(S.w,o.y); ctx.stroke();
+    ctx.setLineDash([5,6]); ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(o.x,o.y-L*1.05); ctx.lineTo(o.x,o.y+L*1.05); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(255,255,255,.5)"; ctx.font = "11px sans-serif"; ctx.fillText("normal", o.x+6, o.y-L*1.05+10);
+    // incident ray
+    var sx = o.x-L*Math.sin(C.a1), sy = o.y-L*Math.cos(C.a1);
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(o.x,o.y); ctx.stroke();
+    PL.arrow(ctx, sx+(o.x-sx)*0.45, sy+(o.y-sy)*0.45, sx+(o.x-sx)*0.55, sy+(o.y-sy)*0.55, "#ffd166", 3);
+    // reflected
+    ctx.strokeStyle = "rgba(255,209,102,"+Math.max(0.12,C.R)+")"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(o.x,o.y); ctx.lineTo(o.x+L*Math.sin(C.a1), o.y-L*Math.cos(C.a1)); ctx.stroke();
+    // refracted
+    if (!C.tir){
+      ctx.strokeStyle = "rgba(255,209,102,"+Math.max(0.15,1-C.R)+")"; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.moveTo(o.x,o.y); ctx.lineTo(o.x+L*Math.sin(C.a2), o.y+L*Math.cos(C.a2)); ctx.stroke();
+    } else {
+      ctx.fillStyle = "#ff8fa3"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center"; ctx.fillText("Total internal reflection", o.x, o.y+Math.min(60, S.h*0.18));
+    }
+    // laser
+    ctx.save(); ctx.translate(sx,sy); ctx.rotate(Math.atan2(o.y-sy, o.x-sx)); ctx.fillStyle = dragging ? "#9db0d0" : "#6b7b99"; ctx.fillRect(-34,-8,34,16); ctx.fillStyle = "#d1495b"; ctx.fillRect(-34,-8,7,16); ctx.restore();
+    // angle arcs
+    ctx.lineWidth = 2; ctx.textAlign = "center"; ctx.font = "12px sans-serif";
+    ctx.strokeStyle = "#14a39b"; ctx.fillStyle = "#14a39b";
+    ctx.beginPath(); ctx.arc(o.x,o.y,48,-Math.PI/2-C.a1,-Math.PI/2); ctx.stroke(); ctx.fillText("θ1 "+(C.a1/deg).toFixed(0)+"°", o.x-70*Math.sin(C.a1/2)-10, o.y-70*Math.cos(C.a1/2)+2);
+    if (!C.tir){ ctx.strokeStyle = "#7bd389"; ctx.fillStyle = "#7bd389"; ctx.beginPath(); ctx.arc(o.x,o.y,56,Math.PI/2-C.a2,Math.PI/2); ctx.stroke(); ctx.fillText("θ2 "+(C.a2/deg).toFixed(1)+"°", o.x+80*Math.sin(C.a2/2)+14, o.y+80*Math.cos(C.a2/2)+6); }
+    // readouts
+    PL.set("r-a2", C.tir ? "none (TIR)" : (C.a2/deg).toFixed(1)+"°");
+    PL.set("r-s1", (C.n1*Math.sin(C.a1)).toFixed(3)); PL.set("r-s2", C.tir ? "-" : (C.n2*Math.sin(C.a2)).toFixed(3));
+    PL.set("r-c", C.n1 > C.n2 ? (Math.asin(C.n2/C.n1)/deg).toFixed(1)+"°" : "none (n1 ≤ n2)");
+    PL.set("r-v1", (3/C.n1).toFixed(2)+" × 10⁸ m/s"); PL.set("r-v2", (3/C.n2).toFixed(2)+" × 10⁸ m/s");
+    PL.set("r-R", (C.R*100).toFixed(1)+" %");
+  }
+  var cv = S.c;
+  function setFromPointer(e){
+    var p = S.pos(e), o = O(), dx = o.x-p.x, dy = o.y-p.y; if (dy <= 0) return;
+    var a = Math.atan2(dx, dy)/deg; a = Math.max(0, Math.min(89, a)); PL.$("a1").value = Math.round(a); PL.$("a1").dispatchEvent(new Event("input"));
+  }
+  cv.addEventListener("pointerdown", function(e){ dragging = true; cv.setPointerCapture(e.pointerId); setFromPointer(e); });
+  cv.addEventListener("pointermove", function(e){ if (dragging) setFromPointer(e); });
+  cv.addEventListener("pointerup", function(){ dragging = false; });
+  document.querySelectorAll("button[data-p]").forEach(function(b){
+    b.onclick = function(){ var p = b.getAttribute("data-p").split(","); PL.$("n1").value = p[0]; PL.$("n2").value = p[1]; PL.$("n1").dispatchEvent(new Event("input")); PL.$("n2").dispatchEvent(new Event("input")); };
+  });
+  PL.loop(function(){ draw(); });
+})();
+</script>
+</body>
+</html>

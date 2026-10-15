@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contact PhysLab</title>
+<meta name="description" content="Contact PhysLab to report a mistake, suggest a new physics simulation or ask a question.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-root="" data-page="contact">
+<header id="site-header"></header>
+<main class="wrap">
+  <div class="page">
+    <h1>Contact us</h1>
+    <p>We would love to hear from you: corrections, suggestions for new simulations, or feedback from teachers and students.</p>
+    <p>Email: <a data-mail href="#">contact@your-domain.com</a></p>
+    <h2>Send a message</h2>
+    <p>This form opens your email app with the message ready to send.</p>
+    <form id="cf">
+      <label for="nm">Your name</label>
+      <input id="nm" type="text" autocomplete="name">
+      <label for="sb">Subject</label>
+      <input id="sb" type="text" value="Feedback about PhysLab">
+      <label for="ms">Message</label>
+      <textarea id="ms" rows="6" required></textarea>
+      <button class="btn" type="submit" style="max-width:220px">Open email</button>
+    </form>
+  </div>
+</main>
+<footer id="site-footer"></footer>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script>
+document.getElementById("cf").addEventListener("submit", function(e){
+  e.preventDefault();
+  var body = document.getElementById("ms").value + "\n\n- " + document.getElementById("nm").value;
+  location.href = "mailto:" + window.PHYSLAB.contactEmail + "?subject=" + encodeURIComponent(document.getElementById("sb").value) + "&body=" + encodeURIComponent(body);
+});
+</script>
+</body>
+</html>

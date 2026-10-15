@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DC Circuits Simulation (Series and Parallel, Ohm's Law)</title>
+<meta name="description" content="Free DC circuit simulation. Build series and parallel resistor circuits, watch charge flow and verify Ohm's law, voltage, current and power.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-root="../" data-sim="circuits">
+<header id="site-header"></header>
+<main class="wrap sim-page">
+  <div class="crumbs" id="crumbs"></div>
+  <h1 id="sim-title">DC Circuits</h1>
+  <p class="lead">One battery and three resistors. Switch between series and parallel wiring, change the values, and see the current, voltage drops and power update instantly.</p>
+  <div class="ad-slot" data-slot="top"></div>
+
+  <section class="sim-wrap">
+    <div class="stage"><canvas id="cv" aria-label="Circuit simulation canvas"></canvas></div>
+    <aside class="panel">
+      <h2>Controls</h2>
+      <div class="ctl"><label for="mode">Wiring</label><select id="mode"><option value="series">Series</option><option value="parallel">Parallel</option></select></div>
+      <div class="ctl"><label for="V">Battery voltage <output id="V-o"></output></label><input type="range" id="V" min="1" max="24" step="0.5" value="12" data-unit="V" data-dec="1"></div>
+      <div class="ctl"><label for="R1">Resistor R1 <output id="R1-o"></output></label><input type="range" id="R1" min="5" max="200" step="1" value="20" data-unit="&Omega;"></div>
+      <div class="ctl"><label for="R2">Resistor R2 <output id="R2-o"></output></label><input type="range" id="R2" min="5" max="200" step="1" value="40" data-unit="&Omega;"></div>
+      <div class="ctl"><label for="R3">Resistor R3 <output id="R3-o"></output></label><input type="range" id="R3" min="5" max="200" step="1" value="60" data-unit="&Omega;"></div>
+      <div class="readouts">
+        <span>Total resistance</span><span id="r-Rt">-</span>
+        <span>Total current</span><span id="r-I">-</span>
+        <span>Total power</span><span id="r-P">-</span>
+        <span>R1 (V, I)</span><span id="r-1">-</span>
+        <span>R2 (V, I)</span><span id="r-2">-</span>
+        <span>R3 (V, I)</span><span id="r-3">-</span>
+      </div>
+    </aside>
+  </section>
+
+  <article class="lesson">
+    <h2>What you are seeing</h2>
+    <p>A battery acts like a pump for electric charge: it pushes charge round the circuit, and the voltage tells you how hard it pushes. The resistors resist the flow. The yellow dots show the direction of <em>conventional current</em> (from the positive terminal round to the negative one); in a real wire the electrons actually drift the opposite way. Faster dots mean more current.</p>
+    <p>In a <strong>series</strong> circuit there is only one path, so the same current passes through every resistor and the battery voltage is shared between them. In a <strong>parallel</strong> circuit there are several paths, so each resistor sees the full battery voltage and the current splits between the branches, with more going through the smaller resistance.</p>
+    <h2>Key formulas</h2>
+    <div class="formula">Ohm's law: V = I R<br>Power: P = V I = I&sup2; R = V&sup2; / R<br>Series: R<sub>total</sub> = R<sub>1</sub> + R<sub>2</sub> + R<sub>3</sub>,  same I,  V<sub>total</sub> = V<sub>1</sub> + V<sub>2</sub> + V<sub>3</sub><br>Parallel: 1 / R<sub>total</sub> = 1/R<sub>1</sub> + 1/R<sub>2</sub> + 1/R<sub>3</sub>,  same V,  I<sub>total</sub> = I<sub>1</sub> + I<sub>2</sub> + I<sub>3</sub></div>
+    <div class="try"><h3>Try this</h3>
+      <ol>
+        <li>In series, add up the three voltage drops. Do they equal the battery voltage?</li>
+        <li>Increase R3 in series. What happens to the current through R1? Why?</li>
+        <li>Switch to parallel. Compare the current in each branch. Which resistor carries the most?</li>
+        <li>In parallel, is the total resistance bigger or smaller than the smallest resistor?</li>
+        <li>Which wiring dissipates more total power for the same battery and resistors?</li>
+      </ol></div>
+    <h2>Common mistakes</h2>
+    <ul>
+      <li>Thinking current is "used up" by a resistor. The same current leaves a series resistor as enters it; it is energy that is transferred.</li>
+      <li>Adding resistors directly in parallel. You must add their reciprocals.</li>
+      <li>Believing a switch or bulb in parallel stops the others when it fails. Each branch works independently, which is why houses are wired in parallel.</li>
+    </ul>
+    <h2>Check yourself</h2>
+    <details class="q"><summary>1. A 12 V battery is connected to 20 &Omega;, 40 &Omega; and 60 &Omega; in series. What is the current?</summary><p>R<sub>total</sub> = 120 &Omega;, so I = 12 / 120 = 0.10 A.</p></details>
+    <details class="q"><summary>2. Two 10 &Omega; resistors are in parallel. What is their combined resistance?</summary><p>1/R = 1/10 + 1/10 = 1/5, so R = 5 &Omega;.</p></details>
+    <details class="q"><summary>3. Why do Christmas lights wired in series all go out when one bulb fails?</summary><p>There is only one path for the current. A broken bulb breaks the loop and the current stops everywhere.</p></details>
+  </article>
+
+  <div class="ad-slot" data-slot="bottom"></div>
+  <h2 class="section-title">More simulations</h2>
+  <div class="related" id="related"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="../js/config.js"></script>
+<script src="../js/common.js"></script>
+<script>
+(function(){
+  var S = PL.stage("cv", 1.6), ctx = S.ctx, phases = [];
+  var SP = 22;
+  function solve(){
+    var V = PL.val("V"), R = [PL.val("R1"), PL.val("R2"), PL.val("R3")], mode = PL.$("mode").value, I = [], Vk = [], It, Rt;
+    if (mode === "series"){ Rt = R[0]+R[1]+R[2]; It = V/Rt; I = [It,It,It]; Vk = R.map(function(r){ return It*r; }); }
+    else { Rt = 1/(1/R[0]+1/R[1]+1/R[2]); It = V/Rt; I = R.map(function(r){ return V/r; }); Vk = [V,V,V]; }
+    return { V:V, R:R, mode:mode, I:I, Vk:Vk, It:It, Rt:Rt };
+  }
+  function build(c){
+    var segs = [], L = 80, Rr = S.w-80, T = S.h*0.22, B = S.h*0.78, M = (T+B)/2, mode = c.mode;
+    function line(x1,y1,x2,y2,I,res,bat){ segs.push({ x1:x1,y1:y1,x2:x2,y2:y2,I:I,res:res,bat:bat }); }
+    // split a straight run into wire / resistor / wire with resistor centred
+    function run(x1,y1,x2,y2,I,k){
+      var len = Math.hypot(x2-x1,y2-y1), ux = (x2-x1)/len, uy = (y2-y1)/len, rl = Math.min(96,len*0.7), a = (len-rl)/2;
+      line(x1,y1,x1+ux*a,y1+uy*a,I); line(x1+ux*a,y1+uy*a,x1+ux*(a+rl),y1+uy*(a+rl),I,k); line(x1+ux*(a+rl),y1+uy*(a+rl),x2,y2,I);
+    }
+    var It = c.It;
+    // left vertical with battery (conventional current flows up through the battery)
+    line(L,B,L,M+26,It); line(L,M+26,L,M-26,It,null,true); line(L,M-26,L,T,It);
+    if (mode === "series"){
+      var W = Rr-L, e = [L, L+W/3, L+2*W/3, Rr];
+      run(e[0],T,e[1],T,It,0); run(e[1],T,e[2],T,It,1); run(e[2],T,e[3],T,It,2);
+      line(Rr,T,Rr,B,It); line(Rr,B,L,B,It);
+    } else {
+      var RP = S.w < 560 ? Rr : S.w-190, xb = [L+(RP-L)*0.36, L+(RP-L)*0.68, RP], I = c.I;
+      line(L,T,xb[0],T,It); line(xb[0],T,xb[1],T,I[1]+I[2]); line(xb[1],T,xb[2],T,I[2]);
+      for (var k = 0; k < 3; k++) run(xb[k],T,xb[k],B,I[k],k);
+      line(xb[2],B,xb[1],B,I[2]); line(xb[1],B,xb[0],B,I[1]+I[2]); line(xb[0],B,L,B,It);
+    }
+    return segs;
+  }
+  function zig(s, col){
+    var dx = s.x2-s.x1, dy = s.y2-s.y1, len = Math.hypot(dx,dy), ux = dx/len, uy = dy/len, nx = -uy, ny = ux, n = 7;
+    ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.lineJoin = "round"; ctx.beginPath(); ctx.moveTo(s.x1,s.y1);
+    for (var i = 0; i < n; i++){ var t = (i+0.5)/n, sg = i%2 ? 1 : -1; ctx.lineTo(s.x1+dx*t+nx*12*sg, s.y1+dy*t+ny*12*sg); }
+    ctx.lineTo(s.x2,s.y2); ctx.stroke();
+  }
+  function draw(dt){
+    var c = solve(), segs = build(c);
+    ctx.clearRect(0,0,S.w,S.h); ctx.fillStyle = "#0f1b2d"; ctx.fillRect(0,0,S.w,S.h);
+    var resSeg = [];
+    segs.forEach(function(s, i){
+      if (s.res !== undefined && s.res !== null){ resSeg[s.res] = s; return; }
+      if (s.bat) return;
+      ctx.strokeStyle = "#8fa3c4"; ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(s.x1,s.y1); ctx.lineTo(s.x2,s.y2); ctx.stroke();
+    });
+    // resistors with heat colour
+    for (var k = 0; k < 3; k++){
+      var s = resSeg[k], p = c.Vk[k]*c.I[k], h = Math.min(1, p/8);
+      var col = "rgb("+Math.round(143+h*97)+","+Math.round(163-h*70)+","+Math.round(196-h*150)+")";
+      zig(s, col);
+      var mx = (s.x1+s.x2)/2, my = (s.y1+s.y2)/2, vert = Math.abs(s.x2-s.x1) < 1;
+      ctx.fillStyle = "#cfe3ff"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = vert ? "left" : "center";
+      ctx.fillText(S.w < 560 ? "R"+(k+1) : "R"+(k+1)+" = "+c.R[k]+" Ω", vert ? mx+22 : mx, vert ? my-3 : my-38);
+      if (S.w >= 560){ ctx.fillStyle = "#9db0d0"; ctx.font = "11px sans-serif"; ctx.fillText(c.Vk[k].toFixed(2)+" V, "+c.I[k].toFixed(3)+" A", vert ? mx+22 : mx, vert ? my+12 : my-24); }
+    }
+    // battery
+    var bs = segs.filter(function(s){ return s.bat; })[0], bx = bs.x1, by = (bs.y1+bs.y2)/2;
+    ctx.strokeStyle = "#8fa3c4"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bx,bs.y1); ctx.lineTo(bx,by+8); ctx.moveTo(bx,by-8); ctx.lineTo(bx,bs.y2); ctx.stroke();
+    ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(bx-18,by-8); ctx.lineTo(bx+18,by-8); ctx.stroke();
+    ctx.strokeStyle = "#cfe3ff"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(bx-10,by+8); ctx.lineTo(bx+10,by+8); ctx.stroke();
+    ctx.fillStyle = "#ffd166"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "left"; ctx.fillText("+", bx+24, by-6); ctx.fillStyle = "#cfe3ff"; ctx.fillText("−", bx+24, by+16);
+    ctx.fillText(c.V.toFixed(1)+" V", bx-62, by+5);
+    // charge dots
+    ctx.fillStyle = "#ffd166";
+    segs.forEach(function(s, i){
+      if (s.bat) return;
+      var len = Math.hypot(s.x2-s.x1,s.y2-s.y1); if (len < 1) return;
+      var sp = Math.min(320, 60*Math.sqrt(s.I*10));
+      phases[i] = ((phases[i]||0)+sp*dt)%SP;
+      var ux = (s.x2-s.x1)/len, uy = (s.y2-s.y1)/len;
+      for (var d = phases[i]; d < len; d += SP){ ctx.beginPath(); ctx.arc(s.x1+ux*d, s.y1+uy*d, 3.2, 0, 7); ctx.fill(); }
+    });
+    ctx.fillStyle = "#9db0d0"; ctx.font = "11px sans-serif"; ctx.textAlign = "right"; ctx.fillText("dots show conventional current (+ to −)", S.w-12, S.h-10);
+    // readouts
+    PL.set("r-Rt", c.Rt.toFixed(1)+" Ω"); PL.set("r-I", c.It.toFixed(3)+" A"); PL.set("r-P", (c.V*c.It).toFixed(2)+" W");
+    for (var q = 0; q < 3; q++) PL.set("r-"+(q+1), c.Vk[q].toFixed(2)+" V, "+c.I[q].toFixed(3)+" A");
+  }
+  PL.loop(function(dt){ draw(dt); });
+})();
+</script>
+</body>
+</html>
